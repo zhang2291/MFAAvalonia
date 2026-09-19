@@ -70,7 +70,8 @@ public partial class TaskQueueViewModel : ViewModelBase, IDisposable
         // 走 else 分支将第一个资源写入配置，覆盖用户已保存的资源选择
         _currentResource = _processorField.InstanceConfiguration.GetValue(ConfigurationKeys.Resource, string.Empty);
         _enableLiveView = _processorField.InstanceConfiguration.GetValue(ConfigurationKeys.EnableLiveView, true);
-        _liveViewRefreshRate = _processorField.InstanceConfiguration.GetValue(ConfigurationKeys.LiveViewRefreshRate, 30.0);
+        var configuredLiveViewFps = _processorField.InstanceConfiguration.GetValue(ConfigurationKeys.LiveViewRefreshRate, AppModeHelper.IsMbccTools ? 10.0 : 30.0);
+        _liveViewRefreshRate = AppModeHelper.IsMbccTools ? Math.Min(configuredLiveViewFps, 10.0) : configuredLiveViewFps;
 
         // Initialize LiveView Timer
         _liveViewTimer = new System.Timers.Timer();
@@ -3328,6 +3329,7 @@ public partial class TaskQueueViewModel : ViewModelBase, IDisposable
     private int _liveViewTickInProgress;
     private int _isDisposed;
     private bool _liveViewNoImageLogged;
+    private DateTime? _liveViewNoImageSinceUtc;
 
     private void UpdateLiveViewTimerInterval()
     {
@@ -3409,7 +3411,9 @@ public partial class TaskQueueViewModel : ViewModelBase, IDisposable
                 var buffer = Processor.GetLiveViewBuffer(false);
                 if (buffer == null)
                 {
-                    if (!_liveViewNoImageLogged)
+                    _liveViewNoImageSinceUtc ??= DateTime.UtcNow;
+                    if (!_liveViewNoImageLogged
+                        && DateTime.UtcNow - _liveViewNoImageSinceUtc.Value >= TimeSpan.FromSeconds(2))
                     {
                         _liveViewNoImageLogged = true;
                         var screencapType = Processor.ScreenshotType();
@@ -3417,12 +3421,13 @@ public partial class TaskQueueViewModel : ViewModelBase, IDisposable
                         var reason = controllerType == MaaControllerTypes.Adb
                             ? LangKeys.LiveViewNoImageReasonAdb.ToLocalization()
                             : LangKeys.LiveViewNoImageReasonWindow.ToLocalization();
-                        LoggerHelper.Warning($"实时画面为空：截图方式={screencapType}，控制器={controllerType}，原因={reason}");
+                        LoggerHelper.Warning($"实时画面连续 2 秒为空：截图方式={screencapType}，控制器={controllerType}，原因={reason}");
                         AddLog($"warn: {LangKeys.LiveViewNoImageWarning.ToLocalizationFormatted(false, screencapType, reason)}", (IBrush?)null);
                     }
                 }
                 else
                 {
+                    _liveViewNoImageSinceUtc = null;
                     _liveViewNoImageLogged = false;
                     _ = UpdateLiveViewImageAsync(buffer);
                 }
@@ -3495,8 +3500,8 @@ public partial class TaskQueueViewModel : ViewModelBase, IDisposable
     private int _liveViewImageCount;
     private int _liveViewImageNewestCount;
 
-    private const int LiveViewSemaphoreMaxCount = 5;
-    private static readonly SemaphoreSlim _liveViewSemaphore = new(2, LiveViewSemaphoreMaxCount);
+    private const int LiveViewSemaphoreMaxCount = 2;
+    private static readonly SemaphoreSlim _liveViewSemaphore = new(1, LiveViewSemaphoreMaxCount);
 
     private readonly WriteableBitmap?[] _liveViewImageCache = new WriteableBitmap?[LiveViewSemaphoreMaxCount];
 
@@ -3509,6 +3514,7 @@ public partial class TaskQueueViewModel : ViewModelBase, IDisposable
     {
         OnPropertyChanged(nameof(IsLiveViewVisible));
         _liveViewNoImageLogged = false;
+        _liveViewNoImageSinceUtc = null;
         LoggerHelper.Info(value ? "连接状态变更：已连接。" : "连接状态变更：未连接。");
     }
 

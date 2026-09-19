@@ -31,6 +31,8 @@ public partial class RootViewContent : UserControl
         Loaded -= OnLoaded;
 
         if (!AppRuntime.IsNewInstance) return;
+        if (AppModeHelper.IsMbccTools)
+            return;
 
         var completed = ConfigurationManager.Current.GetValue(
             ConfigurationKeys.HasCompletedFirstUseTutorial, false);

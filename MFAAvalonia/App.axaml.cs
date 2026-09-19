@@ -388,6 +388,8 @@ public partial class App : Application
             .AddView<ResourcesView, ResourcesViewModel>(services)
             .AddView<SettingsView, SettingsViewModel>(services)
             .AddView<ScreenshotView, ScreenshotViewModel>(services)
+            .AddView<PipelineEditorView, PipelineEditorViewModel>(services)
+            .AddView<TaskManagerView, TaskManagerViewModel>(services)
 
             // Add additional views
             .AddView<AddTaskDialogView, AddTaskDialogViewModel>(services)
@@ -1096,3 +1098,5 @@ public partial class App : Application
         return Array.Empty<string>();
     }
 }
+
+

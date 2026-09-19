@@ -473,7 +473,9 @@ public partial class RootView : SukiWindow
                                 _ => "Window"
                             };
 
-                            vm.AddLogByKey("ConnectingTo", (IBrush?)null, true, true, controllerKey);
+                            var skipStartupConnection = AppModeHelper.IsMbccTools;
+                            if (!skipStartupConnection)
+                                vm.AddLogByKey("ConnectingTo", (IBrush?)null, true, true, controllerKey);
 
                             if (controllerType == MaaControllerTypes.PlayCover)
                             {
@@ -484,14 +486,21 @@ public partial class RootView : SukiWindow
                                 vm.TryReadAdbDeviceFromConfig();
                             }
 
-                            vm.Processor.TaskQueue.Enqueue(new MFATask
+                            if (skipStartupConnection)
                             {
-                                Name = "连接检测",
-                                Type = MFATask.MFATaskType.MFA,
-                                Action = async () => await vm.Processor.TestConnecting(),
-                                OwnerViewModel = vm,
-                            });
-                            vm.Processor.Start(true, checkUpdate: false);
+                                LoggerHelper.Info("MBCCtools 私用模式：启动时跳过 MaaFramework 控制器连接和资源预热，首次执行任务时再加载。");
+                            }
+                            else
+                            {
+                                vm.Processor.TaskQueue.Enqueue(new MFATask
+                                {
+                                    Name = "连接检测",
+                                    Type = MFATask.MFATaskType.MFA,
+                                    Action = async () => await vm.Processor.TestConnecting(),
+                                    OwnerViewModel = vm,
+                                });
+                                vm.Processor.Start(true, checkUpdate: false);
+                            }
                         }
 
                         GlobalConfiguration.SetValue(ConfigurationKeys.NoAutoStart, bool.FalseString);
@@ -528,36 +537,44 @@ public partial class RootView : SukiWindow
                         if (tempTask != null)
                             tempTask.EnableSetting = true;
 
+                        var isMbccTools = AppModeHelper.IsMbccTools;
                         if (!string.IsNullOrWhiteSpace(MaaProcessor.Interface?.Message))
                         {
-                            ToastHelper.Info(MaaProcessor.Interface.Message);
+                            if (isMbccTools)
+                                LoggerHelper.Info($"MBCCtools 私用模式：已静默资源提示：{MaaProcessor.Interface.Message}");
+                            else
+                                ToastHelper.Info(MaaProcessor.Interface.Message);
                         }
 
-                        await AnnouncementViewModel.SetWelcomeAnnouncementsAsync(
-                            MaaProcessor.Interface?.Welcome,
-                            AppPaths.DataRoot);
+                        if (!isMbccTools)
+                        {
+                            await AnnouncementViewModel.SetWelcomeAnnouncementsAsync(
+                                MaaProcessor.Interface?.Welcome,
+                                AppPaths.DataRoot);
+                        }
                     }));
 
 
                 TaskManager.RunTaskAsync(async () =>
                 {
                     await Task.Delay(1000);
+                    var isMbccTools = AppModeHelper.IsMbccTools;
                     DispatcherHelper.RunOnMainThread(() =>
                     {
-                        VersionChecker.CheckMinVersion();
+                        if (!isMbccTools)
+                            VersionChecker.CheckMinVersion();
                         if (ConfigurationManager.Current.GetValue(ConfigurationKeys.AutoMinimize, false))
-                        {
                             WindowState = WindowState.Minimized;
-                        }
                         if (ConfigurationManager.Current.GetValue(ConfigurationKeys.AutoHide, false))
-                        {
                             Hide();
-                        }
                     });
 
-                    await Task.Delay(300);
-                    await AnnouncementViewModel.CheckAnnouncement();
-                }, name: "公告和最新版本检测");
+                    if (!isMbccTools)
+                    {
+                        await Task.Delay(300);
+                        await AnnouncementViewModel.CheckAnnouncement();
+                    }
+                }, name: "启动窗口状态/公告处理");
             }
             else
             {

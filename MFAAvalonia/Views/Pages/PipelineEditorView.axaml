@@ -1,0 +1,72 @@
+<UserControl
+    x:Class="MFAAvalonia.Views.Pages.PipelineEditorView"
+    x:DataType="pages:PipelineEditorViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:pages="clr-namespace:MFAAvalonia.ViewModels.Pages"
+    d:DesignWidth="1200"
+    d:DesignHeight="760"
+    mc:Ignorable="d">
+
+    <Grid ClipToBounds="True">
+        <ContentControl x:Name="WebViewContainer" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+        <Border x:Name="LoadingPanel" Background="{DynamicResource SukiBackgroundBrush}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <ProgressBar x:Name="LoadingProgress" Width="260" IsIndeterminate="True" />
+                <TextBlock FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" Text="正在启动 Pipeline 编辑器…" />
+                <TextBlock x:Name="StatusText" MaxWidth="720" Opacity="0.7" TextAlignment="Center" TextWrapping="Wrap"
+                           Text="正在连接 MaaPipelineEditor LocalBridge 并加载本地编辑器。" />
+                <Button x:Name="RetryButton" IsVisible="False" HorizontalAlignment="Center" Click="OnRetryClick"
+                        Content="重新加载编辑器" />
+            </StackPanel>
+        </Border>        <Border x:Name="ExportPanel" IsVisible="False" Background="#88000000">
+            <Border Width="560" Padding="24" CornerRadius="12"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{DynamicResource SukiBackgroundBrush}">
+                <ScrollViewer MaxHeight="680">
+                    <StackPanel Spacing="12">
+                        <TextBlock FontSize="20" FontWeight="SemiBold" Text="保存 Pipeline 到 MBCCtools" />
+                        <TextBlock x:Name="ExportSourceText" Opacity="0.7" TextWrapping="Wrap" />
+                        <TextBlock Text="文件名" FontWeight="SemiBold" />
+                        <TextBox x:Name="ExportFileNameBox" Watermark="例如：友情点.json" />
+                        <TextBlock Text="保存到哪个资源" FontWeight="SemiBold" />
+                        <StackPanel Orientation="Horizontal" Spacing="18">
+                            <RadioButton x:Name="BaseTargetRadio" GroupName="MpeResourceTarget" IsChecked="True"
+                                         Checked="OnExportTargetChanged" Content="官服 / base" />
+                            <RadioButton x:Name="BilibiliTargetRadio" GroupName="MpeResourceTarget"
+                                         Checked="OnExportTargetChanged" Content="B服 / bilibili" />
+                            <RadioButton x:Name="GlobalTargetRadio" GroupName="MpeResourceTarget"
+                                         Checked="OnExportTargetChanged" Content="国际服 / global" />
+                        </StackPanel>
+                        <CheckBox x:Name="PublishTaskCheck" IsChecked="True" Checked="OnPublishTaskChanged"
+                                  Unchecked="OnPublishTaskChanged" Content="同时发布到主页任务列表" />
+                        <Grid x:Name="PublishOptionsPanel" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="120,*"
+                              ColumnSpacing="10" RowSpacing="8">
+                            <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="任务名称" />
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="TaskNameBox" Watermark="主页显示名称" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="入口节点" />
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="EntryBox" Watermark="留空则自动识别 Pipeline 根节点" />                            <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Margin="0,6,0,0" Text="适用资源" />
+                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                                <CheckBox x:Name="OfficialResourceCheck" Content="官服" />
+                                <CheckBox x:Name="BilibiliResourceCheck" Content="B服" />
+                                <CheckBox x:Name="GlobalResourceCheck" Content="国际服" />
+                            </StackPanel>
+                            <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Text="默认勾选" />
+                            <CheckBox Grid.Row="3" Grid.Column="1" x:Name="DefaultCheckBox" />
+                            <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Top" Margin="0,6,0,0" Text="任务说明" />
+                            <TextBox Grid.Row="4" Grid.Column="1" x:Name="DescriptionBox" MinHeight="68"
+                                     AcceptsReturn="True" TextWrapping="Wrap" />
+                        </Grid>
+                        <TextBlock x:Name="ExportErrorText" Foreground="OrangeRed" TextWrapping="Wrap" IsVisible="False" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                            <Button Click="OnCancelExportClick" Content="取消" />
+                            <Button Click="OnSaveExportClick" Content="保存并应用" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,134 @@
+<UserControl
+    x:Class="MFAAvalonia.Views.Pages.TaskManagerView"
+    x:DataType="pages:TaskManagerViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:pages="clr-namespace:MFAAvalonia.ViewModels.Pages"
+    d:DesignWidth="1200" d:DesignHeight="760" mc:Ignorable="d">
+
+    <Grid Margin="16" RowDefinitions="Auto,*" RowSpacing="12">
+        <Border Padding="12" CornerRadius="10" Background="{DynamicResource SukiBackgroundBrush}">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="任务管理 / interface 编辑器" />
+                    <TextBlock x:Name="ProjectPathText" Opacity="0.65" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button Click="OnReloadClick" Content="重新读取" />
+                    <Button Click="OnSaveClick" Content="保存" />
+                    <Button Click="OnSaveApplyClick" Content="保存并热应用" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="300,12,*">
+            <Border Grid.Column="0" Padding="12" CornerRadius="10" Background="{DynamicResource SukiBackgroundBrush}">
+                <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
+                    <TextBlock FontWeight="SemiBold" Text="主页任务列表" />
+                    <ListBox Grid.Row="1" x:Name="TaskList" SelectionChanged="OnTaskSelectionChanged" />                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6">
+                        <Button Click="OnAddTaskClick" Content="新增" />
+                        <Button Click="OnDeleteTaskClick" Content="删除" />
+                        <Button Click="OnMoveTaskUpClick" Content="上移" />
+                        <Button Click="OnMoveTaskDownClick" Content="下移" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Padding="16" CornerRadius="10" Background="{DynamicResource SukiBackgroundBrush}">
+                <ScrollViewer>
+                    <StackPanel x:Name="EditorPanel" IsEnabled="False" Spacing="12">
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="任务定义" />
+                        <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                            <TextBlock Grid.Row="0" VerticalAlignment="Center" Text="任务名称" />
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="TaskNameBox" LostFocus="OnTaskFieldLostFocus" />
+                            <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="入口 Pipeline" />
+                            <ComboBox Grid.Row="1" Grid.Column="1" x:Name="TaskEntryCombo"
+                                      SelectionChanged="OnTaskEntrySelectionChanged" />
+                            <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="默认勾选" />
+                            <CheckBox Grid.Row="2" Grid.Column="1" x:Name="TaskDefaultCheck" Click="OnTaskFieldChanged" />
+                            <TextBlock Grid.Row="3" VerticalAlignment="Top" Margin="0,6,0,0" Text="适用资源" />
+                            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                                <CheckBox x:Name="TaskOfficialCheck" Click="OnTaskFieldChanged" Content="官服" />
+                                <CheckBox x:Name="TaskBilibiliCheck" Click="OnTaskFieldChanged" Content="B服" />
+                                <CheckBox x:Name="TaskGlobalCheck" Click="OnTaskFieldChanged" Content="国际服" />
+                            </StackPanel>                            <TextBlock Grid.Row="4" VerticalAlignment="Top" Margin="0,6,0,0" Text="任务说明" />
+                            <TextBox Grid.Row="4" Grid.Column="1" x:Name="TaskDescriptionBox" MinHeight="70"
+                                     AcceptsReturn="True" TextWrapping="Wrap" LostFocus="OnTaskFieldLostFocus" />
+                        </Grid>
+
+                        <Separator />
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="任务可选设置（option）" />
+                        <Grid ColumnDefinitions="240,*" ColumnSpacing="12">
+                            <Grid RowDefinitions="Auto,120,Auto" RowSpacing="6">
+                                <TextBlock Text="设置列表" />
+                                <ListBox Grid.Row="1" x:Name="OptionList" SelectionChanged="OnOptionSelectionChanged" />
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6">
+                                    <Button Click="OnAddOptionClick" Content="新增设置" />
+                                    <Button Click="OnDeleteOptionClick" Content="移除设置" />
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel Grid.Column="1" x:Name="OptionEditorPanel" IsEnabled="False" Spacing="8">
+                                <TextBlock Text="设置名称" />
+                                <TextBox x:Name="OptionNameBox" LostFocus="OnOptionNameLostFocus" />
+                                <TextBlock Text="设置说明" />
+                                <TextBox x:Name="OptionDescriptionBox" TextWrapping="Wrap" LostFocus="OnOptionFieldLostFocus" />
+                                <TextBlock Text="默认选项" />
+                                <ComboBox x:Name="OptionDefaultCaseCombo"
+                                          SelectionChanged="OnOptionDefaultCaseSelectionChanged" />
+                                <TextBlock Text="可选项（cases）" />
+                                <ListBox x:Name="CaseList" Height="120" SelectionChanged="OnCaseSelectionChanged" />
+                                <TextBlock Text="新增选项：直接选择已有 Pipeline" Opacity="0.75" />
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                    <ComboBox x:Name="ExistingPipelineCaseCombo" />
+                                    <Button Grid.Column="1" Click="OnAddCaseFromPipelineClick" Content="添加" />
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Button Click="OnAddCaseClick" Content="空白新增" />
+                                    <Button Click="OnDeleteCaseClick" Content="删除选项" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                        <Border x:Name="CaseEditorPanel" IsEnabled="False" Padding="12" CornerRadius="8"
+                                BorderThickness="1" BorderBrush="#22000000">
+                            <StackPanel Spacing="8">
+                                <TextBlock FontWeight="SemiBold" Text="当前选项如何覆盖 Pipeline" />
+                                <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                                    <TextBlock Grid.Row="0" VerticalAlignment="Center" Text="选项名称" />
+                                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="CaseNameBox" LostFocus="OnCaseFieldLostFocus" />
+                                    <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="图标" />
+                                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="CaseIconBox" LostFocus="OnCaseFieldLostFocus"
+                                             Watermark="可选，例如 image/材料/坚韧.png" />
+                                </Grid>
+                                <TextBlock FontWeight="SemiBold" Text="流程跳转（常用）" />
+                                <Grid ColumnDefinitions="*,Auto,*,Auto" ColumnSpacing="8">
+                                    <ComboBox x:Name="OverrideSourcePipelineCombo" />
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="next →" />
+                                    <ComboBox Grid.Column="2" x:Name="OverrideTargetPipelineCombo" />
+                                    <Button Grid.Column="3" Click="OnApplyPipelineNextClick" Content="设置跳转" />
+                                </Grid>
+                                <TextBlock Opacity="0.6" TextWrapping="Wrap"
+                                           Text="大多数选项只需要选择“从哪个节点跳到哪个节点”，无需手写 JSON。" />
+                                <Expander Header="高级覆盖（特殊字段 / JSON）" IsExpanded="False">
+                                    <StackPanel Spacing="8" Margin="0,8,0,0">
+                                        <Grid ColumnDefinitions="220,140,*,Auto" ColumnSpacing="8">
+                                            <ComboBox x:Name="OverrideNodeCombo" />
+                                            <TextBox Grid.Column="1" x:Name="OverrideFieldBox" Watermark="字段，如 expected" />
+                                            <TextBox Grid.Column="2" x:Name="OverrideValueBox" Watermark="值；数组/数字/布尔可填 JSON" />
+                                            <Button Grid.Column="3" Click="OnApplyQuickOverrideClick" Content="写入覆盖" />
+                                        </Grid>
+                                        <TextBox x:Name="PipelineOverrideBox" MinHeight="130" AcceptsReturn="True"
+                                                 FontFamily="Consolas" TextWrapping="NoWrap" LostFocus="OnCaseFieldLostFocus" />
+                                    </StackPanel>
+                                </Expander>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock x:Name="StatusText" TextWrapping="Wrap" Opacity="0.75" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

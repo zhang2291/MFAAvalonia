@@ -63,6 +63,16 @@
                                                                IconVariant=Regular}"
                                                PageContent="{extensions:ServiceProvider ServiceType={x:Type pages:ScreenshotView}}" />
                         <suki:SukiSideMenuItem IsContentMovable="False"
+                                               Header="Pipeline 编辑器"
+                                               Icon="{fluent:FluentIcon Icon=Apps,
+                                                               IconVariant=Regular}"
+                                               PageContent="{extensions:ServiceProvider ServiceType={x:Type pages:PipelineEditorView}}" />
+                        <suki:SukiSideMenuItem IsContentMovable="False"
+                                               Header="任务管理"
+                                               Icon="{fluent:FluentIcon Icon=List,
+                                                               IconVariant=Regular}"
+                                               PageContent="{extensions:ServiceProvider ServiceType={x:Type pages:TaskManagerView}}" />
+                        <suki:SukiSideMenuItem IsContentMovable="False"
                                                Header="{markup:I18n {x:Static helper:LangKeys.ResourceOption}}"
                                                Icon="{fluent:FluentIcon Icon=Apps,
                                                                IconVariant=Regular}"

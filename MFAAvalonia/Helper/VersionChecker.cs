@@ -351,6 +351,12 @@ public static class VersionChecker
     /// </summary>
     public static Task CheckOnStartupAsync()
     {
+        if (AppModeHelper.IsMbccTools)
+        {
+            LoggerHelper.Info("MBCCtools 私用模式：已跳过启动更新检测。");
+            return Task.CompletedTask;
+        }
+
         lock (StartupCheckLock)
         {
             return _startupCheckTask ??= CheckAsync(isStartup: true);

@@ -104,6 +104,8 @@ public partial class TeachingTipOverlay : UserControl
             return;
 
         var step = _steps[_currentStep];
+        if (step.TextOnly)
+            return;
         var target = step.FindTarget?.Invoke();
         if (target == null || _overlayRoot == null || _tipBorder == null) return;
 
@@ -142,6 +144,10 @@ public partial class TeachingTipOverlay : UserControl
         if (_steps == null || _currentStep < 0 || _currentStep >= _steps.Count) return;
 
         var step = _steps[_currentStep];
+        if (_overlayMask != null)
+            _overlayMask.IsVisible = !step.TextOnly;
+        if (_arrow != null && step.TextOnly)
+            _arrow.IsVisible = false;
 
         if (_titleBlock != null)
             _titleBlock.Text = step.TitleKey.ToLocalization();
@@ -203,8 +209,27 @@ public partial class TeachingTipOverlay : UserControl
 
     private void PositionTipAtTarget(TutorialStep step)
     {
+        if (_tipBorder == null || _overlayRoot == null || _arrow == null || _overlayMask == null)
+            return;
+
+        if (step.TextOnly)
+        {
+            _overlayMask.IsVisible = false;
+            _overlayMask.Clip = null;
+            _arrow.IsVisible = false;
+            _tipBorder.InvalidateMeasure();
+            _tipBorder.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var tipSize = _tipBorder.DesiredSize;
+            if (tipSize.Width < 10) tipSize = new Size(320, 150);
+            var x = Math.Max(16, (_overlayRoot.Bounds.Width - tipSize.Width) / 2);
+            var y = Math.Max(16, _overlayRoot.Bounds.Height - tipSize.Height - 28);
+            Canvas.SetLeft(_tipBorder, x);
+            Canvas.SetTop(_tipBorder, y);
+            return;
+        }
+
         var target = step.FindTarget?.Invoke();
-        if (target == null || _tipBorder == null || _overlayRoot == null || _arrow == null || _overlayMask == null)
+        if (target == null)
             return;
 
         try
@@ -479,6 +504,9 @@ public partial class TeachingTipOverlay : UserControl
 
     private async System.Threading.Tasks.Task WaitForTarget(TutorialStep step, int maxRetries = 15, int delayMs = 200)
     {
+        if (step.TextOnly)
+            return;
+
         for (int i = 0; i < maxRetries; i++)
         {
             await System.Threading.Tasks.Task.Delay(delayMs);
@@ -528,6 +556,10 @@ public class TutorialStep
     /// Extra padding around the target control for the cutout highlight area.
     /// </summary>
     public Thickness CutoutPadding { get; set; } = new(0);
+    /// <summary>
+    /// Text-only mode: keep the underlying UI visible and show the explanation at the bottom.
+    /// </summary>
+    public bool TextOnly { get; set; }
     /// <summary>
     /// Called when entering this step (e.g. navigate to a page).
     /// </summary>

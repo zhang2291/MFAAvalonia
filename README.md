@@ -17,6 +17,14 @@ MaaFramework 的跨平台通用桌面界面
 
 </div>
 
+## ⚠️ Fork 说明
+
+> 本仓库是 [MaaXYZ/MFAAvalonia](https://github.com/MaaXYZ/MFAAvalonia) 的个人 Fork。原项目及其版权归原作者/贡献者所有。
+>
+> 本 Fork 仅用于个人设备上的本地使用、功能集成与测试，包含针对 MBCCtools 使用场景的定制修改；不代表上游官方版本，也不承诺通用兼容性或用户支持。
+>
+> 如需官方版本、通用文档或问题反馈，请优先访问[上游仓库](https://github.com/MaaXYZ/MFAAvalonia)，并遵守原项目 LICENSE。
+
 ## 项目简介
 
 MFAAvalonia 是基于 [Avalonia UI](https://github.com/AvaloniaUI/Avalonia) 和 [SukiUI](https://github.com/kikipoulet/SukiUI) 构建的 [MaaFramework](https://github.com/MaaXYZ/MaaFramework) 通用 GUI。资源开发者通过 Project Interface V2 描述任务、选项、控制器和界面文本，用户即可在桌面端配置并运行自动化任务。

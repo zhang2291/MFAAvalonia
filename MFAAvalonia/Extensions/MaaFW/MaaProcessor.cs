@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Media;
 using MaaFramework.Binding;
@@ -1069,7 +1069,8 @@ public class MaaProcessor
     }
 
     private bool UseSeparateScreenshotTasker =>
-        !PlatformControllerFactory.CanInitializeWithoutDevice
+        !AppModeHelper.IsMbccTools
+        && !PlatformControllerFactory.CanInitializeWithoutDevice
         && InstanceConfiguration.GetValue(ConfigurationKeys.UseSeparateScreenshotTasker, true);
 
     private MaaTasker? GetScreenshotTasker(CancellationToken token = default)
@@ -1192,7 +1193,10 @@ public class MaaProcessor
 
     private MaaController? GetScreenshotController(bool test)
     {
-        if (test && !_isClosed)
+        // MBCCtools 私用模式不允许实时视图在后台主动建立整套 MaaTasker/Resource。
+        // 否则仅打开程序就会加载 OCR/GPU 资源并连接模拟器，占用大量内存和 CPU。
+        // 显式刷新设备或启动任务后，主 Tasker 建立连接，实时视图再复用该 Controller。
+        if (test && !_isClosed && !AppModeHelper.IsMbccTools)
             _ = TryConnectForLiveViewAsync();
 
         return GetScreenshotTasker(CancellationToken.None)?.Controller;
@@ -1309,6 +1313,11 @@ public class MaaProcessor
                 ? MaaJobStatus.Succeeded
                 : MaaJobStatus.Invalid;
         }
+
+        // MBCCtools 复用主 Tasker 作为实时画面来源。任务执行期间 MaaFramework 本身会持续截图，
+        // 这里直接消费主控制器缓存，避免额外提交 Screencap 与任务动作争抢同一个控制器。
+        if (!UseSeparateScreenshotTasker && MaaTasker?.IsRunning == true)
+            return MaaJobStatus.Succeeded;
 
         lock (_liveViewScreencapJobLock)
         {
@@ -2500,6 +2509,64 @@ public class MaaProcessor
             // ReadInterface 会在管理器构造完成后统一记录并展示解析错误。
             // 此处等待任务也确保预加载异常已被观察，不会落到终结器线程。
             return null;
+        }
+    }
+
+    public static bool ReloadInterfaceAndTasks(out string message)
+    {
+        if (Processors.Any(processor => processor.IsTaskRunActive || processor.TaskQueue.Count > 0))
+        {
+            message = "当前有任务正在执行，请先停止任务后再应用资源配置。";
+            return false;
+        }
+
+        var interfacePath = GetInterfaceFilePath();
+        if (interfacePath == null)
+        {
+            message = "未找到 interface.json，无法重新加载任务配置。";
+            return false;
+        }
+
+        try
+        {
+            var loaded = LoadMaaInterfaceRecursive(interfacePath);
+            lock (InterfacePreloadLock)
+            {
+                _interfacePreloadTask = null;
+            }
+            _interfaceLoadErrorShown = false;
+
+            var snapshots = Processors.ToDictionary(
+                processor => processor,
+                processor => processor.ViewModel?.TaskItemViewModels
+                    .Where(item => !item.IsResourceOptionItem)
+                    .ToList() ?? new List<DragItemViewModel>());
+
+            foreach (var processor in Processors.ToList())
+            {
+                processor.SetTasker();
+                processor._taskLoader = null;
+                processor.FirstTask = true;
+            }
+
+            Interface = loaded;
+
+            foreach (var processor in Processors.ToList())
+            {
+                var oldItems = new Collection<DragItemViewModel>(snapshots[processor]);
+                processor.InitializeData(oldItems);
+                processor.ViewModel?.RefreshPresets();
+            }
+
+            message = $"资源配置已重新加载，共 {Interface?.Task?.Count ?? 0} 个任务。";
+            LoggerHelper.Info(message);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            message = $"重新加载资源配置失败：{ex.Message}";
+            LoggerHelper.Error(message, ex);
+            return false;
         }
     }
 

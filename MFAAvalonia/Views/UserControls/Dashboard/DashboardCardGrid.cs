@@ -763,8 +763,11 @@ public sealed class DashboardCardGrid : Panel
             ApplyResourceLayout(resourceLayout, defaults);
             SaveLayouts();
             ConfigurationManager.Current.SetValue(layoutHashKey, resourceLayoutHash);
-            ToastHelper.Info(LangKeys.ResourceLayoutUpdatedTitle.ToLocalization(),
-                LangKeys.ResourceLayoutUpdatedContent.ToLocalization());
+            if (AppModeHelper.IsMbccTools)
+                LoggerHelper.Info("MBCCtools 私用模式：检测到资源布局更新，已静默应用。");
+            else
+                ToastHelper.Info(LangKeys.ResourceLayoutUpdatedTitle.ToLocalization(),
+                    LangKeys.ResourceLayoutUpdatedContent.ToLocalization());
             return;
         }
 
