@@ -52,24 +52,21 @@
       <Button Classes="compact" Content="刷新" Click="OnRefresh" />
       <Button Classes="compact" Content="导出 ▾">
         <Button.Flyout><Flyout><Border Background="{DynamicResource SukiCardBackground}" Padding="12" CornerRadius="8"><StackPanel Spacing="6">
-          <Button Content="导出 Excel…" Click="OnExportExcel" />
-          <Button Content="导出 Markdown…" Click="OnExportMarkdown" />
+          <Button Content="全部导出为 Excel…" Click="OnExportExcel" />
+          <Button Content="全部导出为 Markdown…" Click="OnExportMarkdown" />
         </StackPanel></Border></Flyout></Button.Flyout>
       </Button>
-      <Button x:Name="ImportButton" Classes="compact" Content="导入" Click="OnImport" />
+      <Button x:Name="ImportButton" Classes="compact" Content="导入全部" Click="OnImport" />
     </WrapPanel>
     <Grid Grid.Row="2" RowDefinitions="Auto,Auto" RowSpacing="6">
       <WrapPanel>
         <TextBlock Text="查看卡池" FontSize="12" Opacity="0.65" VerticalAlignment="Center" Margin="0,0,10,6" />
         <ComboBox x:Name="PoolBox" Classes="compact" Width="190" SelectionChanged="OnPoolChanged" ToolTip.Tip="只筛选显示和导出的记录，不改变采集范围" />
-        <Button Classes="compact" Content="统计说明">
-          <Button.Flyout><Flyout><Border Background="{DynamicResource SukiCardBackground}" Padding="14" CornerRadius="8"><TextBlock Width="280" FontSize="13" TextWrapping="Wrap"
-            Text="狂平均抽数 = 已保存抽数 ÷ 狂数量。&#10;&#10;出货抽数按同一类型内相邻两次狂的间隔计算，包含本次这一抽。没有上一条狂记录时显示 —。" /></Border></Flyout></Button.Flyout>
-        </Button>
+
       </WrapPanel>
       <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="10">
-        <Border Classes="stat"><StackPanel Spacing="2"><TextBlock Text="抽数" FontSize="12" Opacity="0.65" /><TextBlock x:Name="TotalText" Text="—" FontSize="24" FontWeight="SemiBold" /></StackPanel></Border>
-        <Border Grid.Column="1" Classes="stat"><StackPanel Spacing="2"><TextBlock Text="狂" FontSize="12" Opacity="0.65" /><TextBlock x:Name="GoldText" Text="—" FontSize="24" FontWeight="SemiBold" /></StackPanel></Border>
+        <Border Classes="stat"><StackPanel Spacing="2"><TextBlock Text="总抽数" FontSize="12" Opacity="0.65" /><TextBlock x:Name="TotalText" Text="—" FontSize="24" FontWeight="SemiBold" /></StackPanel></Border>
+        <Border Grid.Column="1" Classes="stat"><StackPanel Spacing="2"><TextBlock Text="狂总数" FontSize="12" Opacity="0.65" /><TextBlock x:Name="GoldText" Text="—" FontSize="24" FontWeight="SemiBold" /></StackPanel></Border>
         <Border Grid.Column="2" Classes="stat"><StackPanel Spacing="2"><TextBlock Text="狂平均抽数" FontSize="12" Opacity="0.65" /><TextBlock x:Name="AverageText" Text="—" FontSize="24" FontWeight="SemiBold" /></StackPanel></Border>
       </Grid>
     </Grid>

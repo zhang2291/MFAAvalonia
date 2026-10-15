@@ -103,9 +103,9 @@ public partial class GachaRecordsView : UserControl
             CategoryBox.SelectedItem = categories.First(c => c.id == category);
             var pools = new[] { "全部实际卡池" }.Concat(data["pools"]!.Values<string>()).ToList();
             PoolBox.ItemsSource = pools; PoolBox.SelectedIndex = Math.Max(0, pools.IndexOf(pool));
-            TotalText.Text = data["total"]?.ToString() ?? "0";
-            GoldText.Text = data["gold"]?.ToString() ?? "0";
-            AverageText.Text = data["average"]?.ToString() ?? "—";
+            TotalText.Text = data["all_total"]?.ToString() ?? "0";
+            GoldText.Text = data["all_gold"]?.ToString() ?? "0";
+            AverageText.Text = data["all_average"]?.ToString() ?? "—";
             CategoryCards.ItemsSource = data["summaries"]!.ToObject<List<Summary>>();
             var hits = data["hits"]!.ToObject<List<Detail>>()!;
             HitsList.ItemsSource = hits;
@@ -187,11 +187,11 @@ public partial class GachaRecordsView : UserControl
         if (Running) { StatusText.Text = "请等待采集结束后导出，避免导出尚未写完的记录。"; return; }
         var category = CategoryId; var pool = Pool;
         var file = await TopLevel.GetTopLevel(this)!.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions {
-            Title = "导出抽卡记录", SuggestedFileName = "抽卡记录." + extension, DefaultExtension = extension,
+            Title = "导出全部抽卡记录", SuggestedFileName = "全部抽卡记录." + extension, DefaultExtension = extension,
             FileTypeChoices = new[] { new FilePickerFileType(extension) { Patterns = new[] { "*." + extension } } }, ShowOverwritePrompt = true });
         if (file == null) return;
         if (Running) { StatusText.Text = "有任务开始运行，请等待结束后再导出。"; return; }
-        await Guard(async () => { var result = await Command("export", "--category", category, "--pool", pool, "--path", file.Path.LocalPath); StatusText.Text = $"已导出 {result["count"]} 条记录到 {file.Path.LocalPath}"; });
+        await Guard(async () => { var result = await Command("export-all", "--path", file.Path.LocalPath); StatusText.Text = $"已导出 {result["count"]} 条记录到 {file.Path.LocalPath}"; });
     }
 
     private async void OnImport(object? sender, RoutedEventArgs e)
@@ -199,11 +199,11 @@ public partial class GachaRecordsView : UserControl
         if (Running) return;
         var category = CategoryId;
         var files = await TopLevel.GetTopLevel(this)!.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
-            Title = "导入当前类型（请确认同一游戏账号）", AllowMultiple = false,
+            Title = "导入全部类型记录（请确认同一游戏账号）", AllowMultiple = false,
             FileTypeFilter = new[] { new FilePickerFileType("Excel") { Patterns = new[] { "*.xlsx" } } } });
         if (files.Count == 0 || Running) return;
         string? message = null;
-        await Guard(async () => { var result = await Command("import", "--category", category, "--path", files[0].Path.LocalPath); message = $"导入完成，新增 {result["count"]} 条。"; });
+        await Guard(async () => { var result = await Command("import-all", "--path", files[0].Path.LocalPath); message = $"已按类型合并，新增 {result["count"]} 条记录。"; });
         if (message != null) { await Refresh(); StatusText.Text = message; }
     }
 }
