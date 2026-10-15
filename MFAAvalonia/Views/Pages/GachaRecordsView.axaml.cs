@@ -120,10 +120,13 @@ public partial class GachaRecordsView : UserControl
     private async void OnRefresh(object? sender, RoutedEventArgs e) => await Refresh();
     private async void OnAddCategory(object? sender, RoutedEventArgs e)
     {
-        if (Running) return;
-        var added = false;
-        await Guard(async () => { await Command("add", "--name", NewCategoryBox.Text ?? ""); NewCategoryBox.Text = ""; added = true; });
-        if (added) await Refresh();
+        if (Running || _busy || TopLevel.GetTopLevel(this) is not Window owner) return;
+        var dialog = GachaCategoryDialogs.Add(async name => {
+            if (Running) throw new InvalidOperationException("有任务正在运行，请结束后再添加类型。");
+            await Command("add", "--name", name);
+        });
+        var added = await dialog.ShowDialog<string?>(owner);
+        if (added != null) await Refresh();
     }
 
     private async void OnDeleteCategory(object? sender, RoutedEventArgs e)
@@ -132,22 +135,16 @@ public partial class GachaRecordsView : UserControl
         var category = CategoryId;
         var name = (CategoryBox.SelectedItem as Category)?.name ?? category;
         if (TopLevel.GetTopLevel(this) is not Window owner) return;
-        var dialog = new Window { Title = "删除池子类型", Width = 410, SizeToContent = SizeToContent.Height,
-            CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner };
-        var confirm = new Button { Content = "删除并备份" };
-        var cancel = new Button { Content = "取消" };
-        confirm.Click += (_, _) => dialog.Close(true);
-        cancel.Click += (_, _) => dialog.Close(false);
-        dialog.Content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16, Children = {
-            new TextBlock { Text = $"删除“{name}”？已有记录会移到备份目录，不会永久删除。", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
-            new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 10, Children = { cancel, confirm } }
-        }};
-        if (!await dialog.ShowDialog<bool>(owner) || Running) return;
-        string? backup = null;
-        await Guard(async () => { backup = (await Command("delete", "--category", category)).Value<string>("backup"); });
-        if (backup != null) {
+        var dialog = GachaCategoryDialogs.Delete(name);
+        var choice = await dialog.ShowDialog<string?>(owner);
+        if (choice is not ("backup" or "permanent") || Running) return;
+        JObject? result = null;
+        await Guard(async () => { result = choice == "permanent"
+            ? await Command("delete", "--category", category, "--permanent")
+            : await Command("delete", "--category", category); });
+        if (result != null) {
             _loading = true; CategoryBox.SelectedItem = null; PoolBox.SelectedIndex = 0; _loading = false;
-            await Refresh(); StatusText.Text = "类型已删除，原记录已备份：" + backup;
+            await Refresh(); StatusText.Text = choice == "permanent" ? "该类型的当前记录已永久删除。" : "类型已删除，原记录已备份：" + result.Value<string>("backup");
         }
     }
 
