@@ -20,7 +20,7 @@ namespace MFAAvalonia.Views.Pages;
 public partial class GachaRecordsView : UserControl
 {
     public sealed class Category { public string id { get; set; } = ""; public string name { get; set; } = ""; }
-    public sealed class Detail { public string Time { get; set; } = ""; public string Pool { get; set; } = ""; public string Type { get; set; } = ""; public string Name { get; set; } = ""; public string Rarity { get; set; } = ""; public string Pulls { get; set; } = ""; }
+    public sealed class Detail { public string Time { get; set; } = ""; public string Pool { get; set; } = ""; public string Type { get; set; } = ""; public string Name { get; set; } = ""; public string Rarity { get; set; } = ""; public string Pulls { get; set; } = ""; public string Note { get; set; } = ""; }
     public sealed class Summary { public string Name { get; set; } = ""; public int Total { get; set; } public int Gold { get; set; } public string Average { get; set; } = ""; }
     private bool _loading;
     private bool _busy;
@@ -57,6 +57,7 @@ public partial class GachaRecordsView : UserControl
         PoolBox.IsEnabled = !_busy;
         ModeBox.IsEnabled = !_busy && !Running;
         ImportButton.IsEnabled = !_busy && !Running;
+        DeleteCategoryButton.IsEnabled = !_busy && !Running;
     }
 
     private async Task<JObject> Command(string operation, params string[] args)
@@ -93,6 +94,7 @@ public partial class GachaRecordsView : UserControl
     {
         var category = CategoryId; var pool = Pool;
         var data = await Command("snapshot", "--category", category, "--pool", pool);
+        category = data.Value<string>("selected_category") ?? category;
         _loading = true;
         try
         {
@@ -106,8 +108,7 @@ public partial class GachaRecordsView : UserControl
             AverageText.Text = data["average"]?.ToString() ?? "—";
             CategoryCards.ItemsSource = data["summaries"]!.ToObject<List<Summary>>();
             var hits = data["hits"]!.ToObject<List<Detail>>()!;
-            HitsGrid.ItemsSource = hits;
-            HitsGrid.Height = Math.Clamp(hits.Count * 32 + 34, 100, 360);
+            HitsList.ItemsSource = hits;
             DetailsGrid.ItemsSource = data["details"]!.ToObject<List<Detail>>();
             if (_captureProcessor == null) StatusText.Text = category == "legacy" ? "旧档案保留为未分类。采集前请选新角色、限定等类型；本次页面中所有记录都会归入选定类型。" : "";
         }
@@ -123,6 +124,31 @@ public partial class GachaRecordsView : UserControl
         var added = false;
         await Guard(async () => { await Command("add", "--name", NewCategoryBox.Text ?? ""); NewCategoryBox.Text = ""; added = true; });
         if (added) await Refresh();
+    }
+
+    private async void OnDeleteCategory(object? sender, RoutedEventArgs e)
+    {
+        if (Running || _busy) return;
+        var category = CategoryId;
+        var name = (CategoryBox.SelectedItem as Category)?.name ?? category;
+        if (TopLevel.GetTopLevel(this) is not Window owner) return;
+        var dialog = new Window { Title = "删除池子类型", Width = 410, SizeToContent = SizeToContent.Height,
+            CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+        var confirm = new Button { Content = "删除并备份" };
+        var cancel = new Button { Content = "取消" };
+        confirm.Click += (_, _) => dialog.Close(true);
+        cancel.Click += (_, _) => dialog.Close(false);
+        dialog.Content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16, Children = {
+            new TextBlock { Text = $"删除“{name}”？已有记录会移到备份目录，不会永久删除。", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+            new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 10, Children = { cancel, confirm } }
+        }};
+        if (!await dialog.ShowDialog<bool>(owner) || Running) return;
+        string? backup = null;
+        await Guard(async () => { backup = (await Command("delete", "--category", category)).Value<string>("backup"); });
+        if (backup != null) {
+            _loading = true; CategoryBox.SelectedItem = null; PoolBox.SelectedIndex = 0; _loading = false;
+            await Refresh(); StatusText.Text = "类型已删除，原记录已备份：" + backup;
+        }
     }
 
     private async void OnCollect(object? sender, RoutedEventArgs e)

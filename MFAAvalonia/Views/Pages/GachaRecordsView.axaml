@@ -49,6 +49,7 @@
           <Button Content="添加" Click="OnAddCategory" HorizontalAlignment="Right" />
         </StackPanel></Flyout></Button.Flyout>
       </Button>
+      <Button x:Name="DeleteCategoryButton" Classes="compact" Content="删除类型" Click="OnDeleteCategory" />
       <ComboBox x:Name="ModeBox" Classes="compact" SelectedIndex="0" Width="155">
         <ComboBoxItem Content="完整识别" /><ComboBoxItem Content="识别到已知停止" />
       </ComboBox>
@@ -69,7 +70,7 @@
         <ComboBox x:Name="PoolBox" Classes="compact" Width="190" SelectionChanged="OnPoolChanged" ToolTip.Tip="只筛选显示和导出的记录，不改变采集范围" />
         <Button Classes="compact" Content="统计说明">
           <Button.Flyout><Flyout><TextBlock Width="280" FontSize="13" TextWrapping="Wrap"
-            Text="狂平均抽数 = 已保存抽数 ÷ 狂数量。&#10;&#10;出狂抽数按实际卡池分别计算。首个狂的 ≥ 表示缺少更早记录。" /></Flyout></Button.Flyout>
+            Text="狂平均抽数 = 已保存抽数 ÷ 狂数量。&#10;&#10;出货抽数按同一类型内相邻两次狂的间隔计算，包含本次这一抽。没有上一条狂记录时显示 —。" /></Flyout></Button.Flyout>
         </Button>
       </WrapPanel>
       <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="10">
@@ -98,14 +99,31 @@
               </DataTemplate></ItemsControl.ItemTemplate>
             </ItemsControl>
             <TextBlock Text="狂级出货记录" FontSize="14" FontWeight="SemiBold" />
-            <DataGrid x:Name="HitsGrid" Classes="records" IsReadOnly="True" AutoGenerateColumns="False" MinHeight="100" MaxHeight="360">
-              <DataGrid.Columns>
-                <DataGridTextColumn Header="角色" Binding="{Binding Name}" FontSize="13" Width="*" MinWidth="90" />
-                <DataGridTextColumn Header="出狂抽数" Binding="{Binding Pulls}" FontSize="13" Width="130" />
-                <DataGridTextColumn Header="卡池" Binding="{Binding Pool}" FontSize="13" Width="*" MinWidth="110" />
-                <DataGridTextColumn Header="时间" Binding="{Binding Time}" FontSize="13" Width="175" />
-              </DataGrid.Columns>
-            </DataGrid>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+              <StackPanel MinWidth="650" Spacing="0">
+                <Grid ColumnDefinitions="2*,165,2*,180" Margin="10,6">
+                  <TextBlock Text="角色" FontSize="12" Opacity="0.65" />
+                  <TextBlock Grid.Column="1" Text="出货抽数" FontSize="12" Opacity="0.65" />
+                  <TextBlock Grid.Column="2" Text="卡池" FontSize="12" Opacity="0.65" />
+                  <TextBlock Grid.Column="3" Text="时间" FontSize="12" Opacity="0.65" />
+                </Grid>
+                <ItemsControl x:Name="HitsList">
+                  <ItemsControl.ItemTemplate><DataTemplate>
+                    <Border Padding="10,8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SukiControlBorderBrush}">
+                      <Grid ColumnDefinitions="2*,165,2*,180" MinHeight="28">
+                        <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Spacing="2">
+                          <TextBlock Text="{Binding Pulls}" FontSize="13" />
+                          <TextBlock Text="{Binding Note}" FontSize="11" Opacity="0.6" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding Pool}" FontSize="13" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="{Binding Time}" FontSize="12" VerticalAlignment="Center" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate></ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </ScrollViewer>
           </StackPanel>
         </ScrollViewer>
       </TabItem>
