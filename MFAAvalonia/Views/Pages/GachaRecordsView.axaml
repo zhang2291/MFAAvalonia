@@ -1,65 +1,122 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="MFAAvalonia.Views.Pages.GachaRecordsView" x:CompileBindings="False">
-  <Grid Margin="20" RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="12">
-    <StackPanel Spacing="4">
-      <TextBlock Text="抽卡记录" FontSize="26" FontWeight="SemiBold" />
-      <TextBlock Text="选择池子类型，再开始采集。不同类型独立保存；完整明细可导出到你指定的位置。" Opacity="0.7" TextWrapping="Wrap" />
-    </StackPanel>
+             x:Class="MFAAvalonia.Views.Pages.GachaRecordsView" x:CompileBindings="False" FontSize="14">
+  <UserControl.Styles>
+    <Style Selector="Button.compact">
+      <Setter Property="FontSize" Value="13" /><Setter Property="MinHeight" Value="32" />
+      <Setter Property="Height" Value="32" /><Setter Property="Padding" Value="12,4" />
+      <Setter Property="Margin" Value="0,0,8,6" />
+    </Style>
+    <Style Selector="ComboBox.compact">
+      <Setter Property="FontSize" Value="13" /><Setter Property="MinHeight" Value="32" />
+      <Setter Property="Height" Value="32" /><Setter Property="Padding" Value="10,4" />
+      <Setter Property="Margin" Value="0,0,8,6" />
+    </Style>
+    <Style Selector="DataGrid.records">
+      <Setter Property="FontSize" Value="13" /><Setter Property="RowHeight" Value="32" />
+      <Setter Property="ColumnHeaderHeight" Value="32" /><Setter Property="BorderThickness" Value="0" />
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+      <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    </Style>
+    <Style Selector="DataGrid.records DataGridCell TextBlock">
+      <Setter Property="FontSize" Value="13" /><Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="DataGrid.records DataGridColumnHeader">
+      <Setter Property="FontSize" Value="12" /><Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+    <Style Selector="Border.stat">
+      <Setter Property="Background" Value="{DynamicResource SukiCardBackground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SukiControlBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" /><Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="14,10" />
+    </Style>
+  </UserControl.Styles>
+  <Grid Margin="18,14" RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="8">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+      <TextBlock Text="抽卡记录" FontSize="22" FontWeight="SemiBold" />
+      <TextBlock Grid.Column="1" Text="采集记录自动保存" FontSize="12" Opacity="0.6" VerticalAlignment="Center" />
+    </Grid>
     <WrapPanel Grid.Row="1">
-      <ComboBox x:Name="CategoryBox" Width="170" Margin="0,0,8,8" SelectionChanged="OnCategoryChanged">
-        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding name}" /></DataTemplate></ComboBox.ItemTemplate>
+      <ComboBox x:Name="CategoryBox" Classes="compact" Width="145" SelectionChanged="OnCategoryChanged" ToolTip.Tip="本次采集保存到哪个池子类型">
+        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding name}" FontSize="13" /></DataTemplate></ComboBox.ItemTemplate>
       </ComboBox>
-      <TextBox x:Name="NewCategoryBox" Width="150" Watermark="自定义池子类型" Margin="0,0,8,8" />
-      <Button Content="添加类型" Click="OnAddCategory" Margin="0,0,14,8" />
-      <ComboBox x:Name="ModeBox" SelectedIndex="0" Width="165" Margin="0,0,8,8">
+      <Button Classes="compact" Content="＋ 类型">
+        <Button.Flyout><Flyout><StackPanel Spacing="10" Width="230">
+          <TextBlock Text="添加池子类型" FontWeight="SemiBold" />
+          <TextBox x:Name="NewCategoryBox" Watermark="输入类型名称" FontSize="14" />
+          <Button Content="添加" Click="OnAddCategory" HorizontalAlignment="Right" />
+        </StackPanel></Flyout></Button.Flyout>
+      </Button>
+      <ComboBox x:Name="ModeBox" Classes="compact" SelectedIndex="0" Width="155">
         <ComboBoxItem Content="完整识别" /><ComboBoxItem Content="识别到已知停止" />
       </ComboBox>
-      <Button x:Name="CollectButton" Content="开始采集" Click="OnCollect" Margin="0,0,8,8" />
-      <Button x:Name="StopButton" Content="停止采集" Click="OnStop" IsEnabled="False" Margin="0,0,8,8" />
-      <Button Content="刷新记录" Click="OnRefresh" Margin="0,0,8,8" />
+      <Button x:Name="CollectButton" Classes="compact" Content="开始采集" Click="OnCollect" />
+      <Button x:Name="StopButton" Classes="compact" Content="停止" Click="OnStop" IsEnabled="False" />
+      <Button Classes="compact" Content="刷新" Click="OnRefresh" />
+      <Button Classes="compact" Content="导出 ▾">
+        <Button.Flyout><Flyout><StackPanel Spacing="6">
+          <Button Content="导出 Excel…" Click="OnExportExcel" />
+          <Button Content="导出 Markdown…" Click="OnExportMarkdown" />
+        </StackPanel></Flyout></Button.Flyout>
+      </Button>
+      <Button x:Name="ImportButton" Classes="compact" Content="导入" Click="OnImport" />
     </WrapPanel>
-    <StackPanel Grid.Row="2" Spacing="8">
+    <Grid Grid.Row="2" RowDefinitions="Auto,Auto" RowSpacing="6">
       <WrapPanel>
-        <ComboBox x:Name="PoolBox" Width="220" SelectionChanged="OnPoolChanged" Margin="0,0,8,8" />
-        <Button Content="导出 Excel…" Click="OnExportExcel" Margin="0,0,8,8" />
-        <Button Content="导出 Markdown…" Click="OnExportMarkdown" Margin="0,0,8,8" />
-        <Button x:Name="ImportButton" Content="导入 Excel…" Click="OnImport" Margin="0,0,8,8" />
+        <TextBlock Text="查看卡池" FontSize="12" Opacity="0.65" VerticalAlignment="Center" Margin="0,0,10,6" />
+        <ComboBox x:Name="PoolBox" Classes="compact" Width="190" SelectionChanged="OnPoolChanged" ToolTip.Tip="只筛选显示和导出的记录，不改变采集范围" />
+        <Button Classes="compact" Content="统计说明">
+          <Button.Flyout><Flyout><TextBlock Width="280" FontSize="13" TextWrapping="Wrap"
+            Text="狂平均抽数 = 已保存抽数 ÷ 狂数量。&#10;&#10;出狂抽数按实际卡池分别计算。首个狂的 ≥ 表示缺少更早记录。" /></Flyout></Button.Flyout>
+        </Button>
       </WrapPanel>
-      <TextBlock x:Name="SummaryText" FontSize="20" FontWeight="SemiBold" Text="正在读取记录…" />
-      <TextBlock Text="均值 = 已记录抽数 ÷ 狂级数量；出狂间隔按游戏追踪类型与实际卡池分别计算。首个狂以 ≥ 标记，不推算缺失历史或官方保底。" Opacity="0.65" TextWrapping="Wrap" />
-    </StackPanel>
-    <TextBlock Grid.Row="3" x:Name="StatusText" TextWrapping="Wrap" />
-    <TabControl Grid.Row="4">
+      <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="10">
+        <Border Classes="stat"><StackPanel Spacing="2"><TextBlock Text="抽数" FontSize="12" Opacity="0.65" /><TextBlock x:Name="TotalText" Text="—" FontSize="24" FontWeight="SemiBold" /></StackPanel></Border>
+        <Border Grid.Column="1" Classes="stat"><StackPanel Spacing="2"><TextBlock Text="狂" FontSize="12" Opacity="0.65" /><TextBlock x:Name="GoldText" Text="—" FontSize="24" FontWeight="SemiBold" /></StackPanel></Border>
+        <Border Grid.Column="2" Classes="stat"><StackPanel Spacing="2"><TextBlock Text="狂平均抽数" FontSize="12" Opacity="0.65" /><TextBlock x:Name="AverageText" Text="—" FontSize="24" FontWeight="SemiBold" /></StackPanel></Border>
+      </Grid>
+    </Grid>
+    <TextBlock Grid.Row="3" x:Name="StatusText" FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
+    <TabControl Grid.Row="4" x:Name="RecordTabs" FontSize="14" MinHeight="100">
       <TabItem Header="概览">
-        <Grid RowDefinitions="Auto,190,Auto,*" RowSpacing="8" Margin="0,12,0,0">
-          <TextBlock Text="各池子类型" FontSize="17" FontWeight="SemiBold" />
-          <DataGrid Grid.Row="1" x:Name="CategoryGrid" IsReadOnly="True" AutoGenerateColumns="False" GridLinesVisibility="None">
-            <DataGrid.Columns>
-              <DataGridTextColumn Header="类型" Binding="{Binding Name}" Width="*" />
-              <DataGridTextColumn Header="总抽数" Binding="{Binding Total}" Width="*" />
-              <DataGridTextColumn Header="狂级数量" Binding="{Binding Gold}" Width="*" />
-              <DataGridTextColumn Header="样本均值（抽/狂）" Binding="{Binding Average}" Width="*" />
-            </DataGrid.Columns>
-          </DataGrid>
-          <TextBlock Grid.Row="2" Text="当前类型 · 狂级出货记录" FontSize="17" FontWeight="SemiBold" />
-          <DataGrid Grid.Row="3" x:Name="HitsGrid" IsReadOnly="True" AutoGenerateColumns="False" GridLinesVisibility="None">
-            <DataGrid.Columns>
-              <DataGridTextColumn Header="角色" Binding="{Binding Name}" Width="*" />
-              <DataGridTextColumn Header="本次出狂间隔" Binding="{Binding Pulls}" Width="*" />
-              <DataGridTextColumn Header="卡池" Binding="{Binding Pool}" Width="*" />
-              <DataGridTextColumn Header="时间" Binding="{Binding Time}" Width="*" />
-            </DataGrid.Columns>
-          </DataGrid>
-        </Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="10" Margin="0,10,6,0">
+            <TextBlock Text="各类型汇总" FontSize="14" FontWeight="SemiBold" />
+            <ItemsControl x:Name="CategoryCards">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate><DataTemplate>
+                <Border Classes="stat" Width="168" Margin="0,0,8,8" Padding="12,8">
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                    <TextBlock Text="{Binding Total, StringFormat='{}{0} 抽'}" FontSize="19" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Gold, StringFormat='狂：{0}'}" FontSize="12" Opacity="0.7" />
+                    <TextBlock Text="{Binding Average, StringFormat='狂平均抽数：{0}'}" FontSize="12" Opacity="0.7" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="狂级出货记录" FontSize="14" FontWeight="SemiBold" />
+            <DataGrid x:Name="HitsGrid" Classes="records" IsReadOnly="True" AutoGenerateColumns="False" MinHeight="100" MaxHeight="360">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="角色" Binding="{Binding Name}" FontSize="13" Width="*" MinWidth="90" />
+                <DataGridTextColumn Header="出狂抽数" Binding="{Binding Pulls}" FontSize="13" Width="130" />
+                <DataGridTextColumn Header="卡池" Binding="{Binding Pool}" FontSize="13" Width="*" MinWidth="110" />
+                <DataGridTextColumn Header="时间" Binding="{Binding Time}" FontSize="13" Width="175" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </ScrollViewer>
       </TabItem>
       <TabItem Header="完整明细">
-        <DataGrid x:Name="DetailsGrid" IsReadOnly="True" AutoGenerateColumns="False" GridLinesVisibility="None" Margin="0,12,0,0">
+        <DataGrid x:Name="DetailsGrid" Classes="records" IsReadOnly="True" AutoGenerateColumns="False" Margin="0,8,0,0">
           <DataGrid.Columns>
-            <DataGridTextColumn Header="时间" Binding="{Binding Time}" Width="1.5*" />
-            <DataGridTextColumn Header="游戏追踪类型" Binding="{Binding Type}" Width="*" />
-            <DataGridTextColumn Header="实际卡池" Binding="{Binding Pool}" Width="*" />
-            <DataGridTextColumn Header="稀有度" Binding="{Binding Rarity}" Width="*" />
-            <DataGridTextColumn Header="角色" Binding="{Binding Name}" Width="*" />
+            <DataGridTextColumn Header="时间" Binding="{Binding Time}" FontSize="13" Width="180" />
+            <DataGridTextColumn Header="类型" Binding="{Binding Type}" FontSize="13" Width="90" />
+            <DataGridTextColumn Header="卡池" Binding="{Binding Pool}" FontSize="13" Width="*" MinWidth="130" />
+            <DataGridTextColumn Header="稀有度" Binding="{Binding Rarity}" FontSize="13" Width="100" />
+            <DataGridTextColumn Header="角色" Binding="{Binding Name}" FontSize="13" Width="*" MinWidth="105" />
           </DataGrid.Columns>
         </DataGrid>
       </TabItem>

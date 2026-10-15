@@ -44,7 +44,7 @@ public partial class GachaRecordsView : UserControl
             {
                 _captureProcessor = null;
                 await Refresh();
-                StatusText.Text = "采集任务已结束，已刷新当前档案。完整性请结合运行日志确认。";
+                StatusText.Text = "采集已结束，已采集的记录自动保留。若记录不完整，请查看运行日志。";
             }
         };
     }
@@ -101,11 +101,15 @@ public partial class GachaRecordsView : UserControl
             CategoryBox.SelectedItem = categories.First(c => c.id == category);
             var pools = new[] { "全部实际卡池" }.Concat(data["pools"]!.Values<string>()).ToList();
             PoolBox.ItemsSource = pools; PoolBox.SelectedIndex = Math.Max(0, pools.IndexOf(pool));
-            SummaryText.Text = $"{categories.First(c => c.id == category).name}  ·  {data["total"]} 抽   /   狂 {data["gold"]} 个   /   平均 {data["average"]} 抽一个狂";
-            CategoryGrid.ItemsSource = data["summaries"]!.ToObject<List<Summary>>();
-            HitsGrid.ItemsSource = data["hits"]!.ToObject<List<Detail>>();
+            TotalText.Text = data["total"]?.ToString() ?? "0";
+            GoldText.Text = data["gold"]?.ToString() ?? "0";
+            AverageText.Text = data["average"]?.ToString() ?? "—";
+            CategoryCards.ItemsSource = data["summaries"]!.ToObject<List<Summary>>();
+            var hits = data["hits"]!.ToObject<List<Detail>>()!;
+            HitsGrid.ItemsSource = hits;
+            HitsGrid.Height = Math.Clamp(hits.Count * 32 + 34, 100, 360);
             DetailsGrid.ItemsSource = data["details"]!.ToObject<List<Detail>>();
-            if (_captureProcessor == null) StatusText.Text = category == "legacy" ? "旧档案保留为未分类。采集前请选新角色、限定等类型；本次页面中所有记录都会归入选定类型。" : "类型独立保存；请先手动打开对应游戏记录页。不要将多个账号导入同一份档案。";
+            if (_captureProcessor == null) StatusText.Text = category == "legacy" ? "旧档案保留为未分类。采集前请选新角色、限定等类型；本次页面中所有记录都会归入选定类型。" : "";
         }
         finally { _loading = false; }
     });
