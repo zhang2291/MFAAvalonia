@@ -390,6 +390,7 @@ public partial class App : Application
             .AddView<ScreenshotView, ScreenshotViewModel>(services)
             .AddView<PipelineEditorView, PipelineEditorViewModel>(services)
             .AddView<TaskManagerView, TaskManagerViewModel>(services)
+            .AddView<GachaRecordsView, GachaRecordsViewModel>(services)
 
             // Add additional views
             .AddView<AddTaskDialogView, AddTaskDialogViewModel>(services)

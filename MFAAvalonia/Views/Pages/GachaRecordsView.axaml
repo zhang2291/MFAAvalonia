@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MFAAvalonia.Views.Pages.GachaRecordsView" x:CompileBindings="False">
+  <Grid Margin="20" RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="12">
+    <StackPanel Spacing="4">
+      <TextBlock Text="抽卡记录" FontSize="26" FontWeight="SemiBold" />
+      <TextBlock Text="选择池子类型，再开始采集。不同类型独立保存；完整明细可导出到你指定的位置。" Opacity="0.7" TextWrapping="Wrap" />
+    </StackPanel>
+    <WrapPanel Grid.Row="1">
+      <ComboBox x:Name="CategoryBox" Width="170" Margin="0,0,8,8" SelectionChanged="OnCategoryChanged">
+        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding name}" /></DataTemplate></ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBox x:Name="NewCategoryBox" Width="150" Watermark="自定义池子类型" Margin="0,0,8,8" />
+      <Button Content="添加类型" Click="OnAddCategory" Margin="0,0,14,8" />
+      <ComboBox x:Name="ModeBox" SelectedIndex="0" Width="165" Margin="0,0,8,8">
+        <ComboBoxItem Content="完整识别" /><ComboBoxItem Content="识别到已知停止" />
+      </ComboBox>
+      <Button x:Name="CollectButton" Content="开始采集" Click="OnCollect" Margin="0,0,8,8" />
+      <Button x:Name="StopButton" Content="停止采集" Click="OnStop" IsEnabled="False" Margin="0,0,8,8" />
+      <Button Content="刷新记录" Click="OnRefresh" Margin="0,0,8,8" />
+    </WrapPanel>
+    <StackPanel Grid.Row="2" Spacing="8">
+      <WrapPanel>
+        <ComboBox x:Name="PoolBox" Width="220" SelectionChanged="OnPoolChanged" Margin="0,0,8,8" />
+        <Button Content="导出 Excel…" Click="OnExportExcel" Margin="0,0,8,8" />
+        <Button Content="导出 Markdown…" Click="OnExportMarkdown" Margin="0,0,8,8" />
+        <Button x:Name="ImportButton" Content="导入 Excel…" Click="OnImport" Margin="0,0,8,8" />
+      </WrapPanel>
+      <TextBlock x:Name="SummaryText" FontSize="20" FontWeight="SemiBold" Text="正在读取记录…" />
+      <TextBlock Text="均值 = 已记录抽数 ÷ 狂级数量；出狂间隔按游戏追踪类型与实际卡池分别计算。首个狂以 ≥ 标记，不推算缺失历史或官方保底。" Opacity="0.65" TextWrapping="Wrap" />
+    </StackPanel>
+    <TextBlock Grid.Row="3" x:Name="StatusText" TextWrapping="Wrap" />
+    <TabControl Grid.Row="4">
+      <TabItem Header="概览">
+        <Grid RowDefinitions="Auto,190,Auto,*" RowSpacing="8" Margin="0,12,0,0">
+          <TextBlock Text="各池子类型" FontSize="17" FontWeight="SemiBold" />
+          <DataGrid Grid.Row="1" x:Name="CategoryGrid" IsReadOnly="True" AutoGenerateColumns="False" GridLinesVisibility="None">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="类型" Binding="{Binding Name}" Width="*" />
+              <DataGridTextColumn Header="总抽数" Binding="{Binding Total}" Width="*" />
+              <DataGridTextColumn Header="狂级数量" Binding="{Binding Gold}" Width="*" />
+              <DataGridTextColumn Header="样本均值（抽/狂）" Binding="{Binding Average}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+          <TextBlock Grid.Row="2" Text="当前类型 · 狂级出货记录" FontSize="17" FontWeight="SemiBold" />
+          <DataGrid Grid.Row="3" x:Name="HitsGrid" IsReadOnly="True" AutoGenerateColumns="False" GridLinesVisibility="None">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="角色" Binding="{Binding Name}" Width="*" />
+              <DataGridTextColumn Header="本次出狂间隔" Binding="{Binding Pulls}" Width="*" />
+              <DataGridTextColumn Header="卡池" Binding="{Binding Pool}" Width="*" />
+              <DataGridTextColumn Header="时间" Binding="{Binding Time}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+      </TabItem>
+      <TabItem Header="完整明细">
+        <DataGrid x:Name="DetailsGrid" IsReadOnly="True" AutoGenerateColumns="False" GridLinesVisibility="None" Margin="0,12,0,0">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="时间" Binding="{Binding Time}" Width="1.5*" />
+            <DataGridTextColumn Header="游戏追踪类型" Binding="{Binding Type}" Width="*" />
+            <DataGridTextColumn Header="实际卡池" Binding="{Binding Pool}" Width="*" />
+            <DataGridTextColumn Header="稀有度" Binding="{Binding Rarity}" Width="*" />
+            <DataGridTextColumn Header="角色" Binding="{Binding Name}" Width="*" />
+          </DataGrid.Columns>
+        </DataGrid>
+      </TabItem>
+    </TabControl>
+  </Grid>
+</UserControl>

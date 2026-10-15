@@ -1190,6 +1190,8 @@ public class MaaProcessor
     private bool _suppressConnectionAttemptErrorToast;
     public bool IsConnecting => _isConnecting != 0;
     public bool IsTaskRunActive => Volatile.Read(ref _isTaskRunActive) != 0;
+    private long _taskRunGeneration;
+    public long TaskRunGeneration => Interlocked.Read(ref _taskRunGeneration);
 
     private MaaController? GetScreenshotController(bool test)
     {
@@ -3192,6 +3194,11 @@ public class MaaProcessor
 
     private void LoadTasks(List<MaaInterface.MaaInterfaceTask> tasks, IList<DragItemViewModel>? oldDrags = null)
     {
+        if (AppModeHelper.IsMbccTools && !OperatingSystem.IsAndroid())
+        {
+            tasks = tasks.Where(task => task.Entry != "抽卡记录").ToList();
+            oldDrags = oldDrags?.Where(task => task.InterfaceItem?.Entry != "抽卡记录").ToList();
+        }
         _taskLoader ??= new TaskLoader(Interface, ViewModel!);
         _taskLoader.LoadTasks(tasks, TasksSource, ref FirstTask, oldDrags);
     }
@@ -3471,13 +3478,17 @@ public class MaaProcessor
     }
 
     public void Start(List<DragItemViewModel> dragItemViewModels, bool onlyStart = false, bool checkUpdate = false, bool ignoreCheckedState = false)
+        => TryStartTasks(dragItemViewModels, onlyStart, checkUpdate, ignoreCheckedState);
+
+    public bool TryStartTasks(List<DragItemViewModel> dragItemViewModels, bool onlyStart = false, bool checkUpdate = false, bool ignoreCheckedState = false)
     {
         if (!TryBeginTaskRun())
         {
             LoggerHelper.Info("任务启动请求已忽略：当前已有任务链正在启动或运行。");
-            return;
+            return false;
         }
         EnqueueCommand(() => StartInternal(dragItemViewModels, onlyStart, checkUpdate, ignoreCheckedState));
+        return true;
     }
 
     private Task StartInternal(List<DragItemViewModel>? dragItemViewModels, bool onlyStart, bool checkUpdate, bool ignoreCheckedState = false)
@@ -3510,6 +3521,7 @@ public class MaaProcessor
     {
         if (Interlocked.CompareExchange(ref _isTaskRunActive, 1, 0) != 0)
             return false;
+        Interlocked.Increment(ref _taskRunGeneration);
 
         DispatcherHelper.PostOnMainThread(() =>
         {
