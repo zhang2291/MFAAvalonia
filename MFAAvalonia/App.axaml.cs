@@ -385,7 +385,6 @@ public partial class App : Application
             .AddView<InstanceContainerView, InstanceTabBarViewModel>(services)
             .AddView<TaskQueueView, TaskQueueViewModel>(services)
             .AddView<MonitorView, MonitorViewModel>(services)
-            .AddView<ResourcesView, ResourcesViewModel>(services)
             .AddView<SettingsView, SettingsViewModel>(services)
             .AddView<ScreenshotView, ScreenshotViewModel>(services)
             .AddView<PipelineEditorView, PipelineEditorViewModel>(services)
