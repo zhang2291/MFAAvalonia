@@ -1,6 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MFAAvalonia.Views.Pages.InventoryView" x:CompileBindings="False" FontSize="14">
   <UserControl.Styles>
+    <Style Selector="DataGrid#ItemsGrid DataGridCell TextBlock"><Setter Property="FontSize" Value="14" /><Setter Property="VerticalAlignment" Value="Center" /></Style>
+    <Style Selector="DataGrid#ItemsGrid DataGridColumnHeader"><Setter Property="FontSize" Value="12" /></Style>
     <Style Selector="Button.compact"><Setter Property="Padding" Value="12,6" /><Setter Property="Margin" Value="0,0,8,6" /></Style>
   </UserControl.Styles>
   <Grid Margin="18,14" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
@@ -39,10 +41,10 @@
     </Grid>
     <Grid Grid.Row="5">
       <DataGrid x:Name="ItemsGrid" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal"
-                RowHeight="56" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MinHeight="80">
+                RowHeight="48" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MinHeight="80">
         <DataGrid.Columns>
           <DataGridTemplateColumn Header="" Width="54"><DataGridTemplateColumn.CellTemplate><DataTemplate>
-            <Image Source="{Binding Icon}" Width="42" Height="42" Stretch="Uniform" />
+            <Image Source="{Binding Icon}" Width="36" Height="36" Stretch="Uniform" />
           </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
           <DataGridTextColumn Header="物品" Binding="{Binding Name}" Width="2*" MinWidth="130" />
           <DataGridTextColumn Header="数量" Binding="{Binding Quantity}" Width="*" MinWidth="90" />
