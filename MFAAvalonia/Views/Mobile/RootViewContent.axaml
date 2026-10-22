@@ -53,6 +53,9 @@
                         <suki:SukiSideMenuItem IsContentMovable="False" Header="抽卡记录"
                                                Icon="{fluent:FluentIcon Icon=History, IconVariant=Regular}"
                                                PageContent="{extensions:ServiceProvider ServiceType={x:Type pages:GachaRecordsView}}" />
+                        <suki:SukiSideMenuItem IsContentMovable="False" Header="仓库资源"
+                                               Icon="{fluent:FluentIcon Icon=Box, IconVariant=Regular}"
+                                               PageContent="{extensions:ServiceProvider ServiceType={x:Type pages:InventoryView}}" />
 
                         <suki:SukiSideMenuItem IsContentMovable="False"
                                                Header="{markup:I18n {x:Static helper:LangKeys.Monitor}}"

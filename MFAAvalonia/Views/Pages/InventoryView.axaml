@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MFAAvalonia.Views.Pages.InventoryView" x:CompileBindings="False" FontSize="14">
+  <UserControl.Styles>
+    <Style Selector="Button.compact"><Setter Property="Padding" Value="12,6" /><Setter Property="Margin" Value="0,0,8,6" /></Style>
+  </UserControl.Styles>
+  <Grid Margin="18,14" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10">
+    <TextBlock Text="仓库资源" FontSize="22" FontWeight="SemiBold" />
+    <WrapPanel Grid.Row="1">
+      <Button x:Name="CollectButton" Classes="compact" Content="开始识别" Click="OnCollect" />
+      <Button x:Name="StopButton" Classes="compact" Content="停止" Click="OnStop" IsEnabled="False" />
+      <Button Classes="compact" Content="刷新" Click="OnRefresh" />
+      <Button x:Name="ExportButton" Classes="compact" Content="导出 ▾">
+        <Button.Flyout><Flyout><StackPanel Spacing="6">
+          <Button Content="导出全部 JSON…" Click="OnExportJson" />
+          <Button Content="导出全部 Markdown…" Click="OnExportMarkdown" />
+        </StackPanel></Flyout></Button.Flyout>
+      </Button>
+    </WrapPanel>
+    <StackPanel Grid.Row="2" Spacing="4">
+      <TextBlock x:Name="SnapshotText" Text="尚未采集仓库资源" TextWrapping="Wrap" />
+      <TextBlock x:Name="StatusText" FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
+    </StackPanel>
+    <ItemsControl Grid.Row="3" x:Name="CurrencyCards">
+      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate><DataTemplate>
+        <Border Padding="12,8" Margin="0,0,10,6" MinWidth="130" CornerRadius="8" Background="{DynamicResource SukiCardBackground}">
+          <StackPanel Spacing="3"><TextBlock Text="{Binding Name}" FontSize="12" Opacity="0.7" />
+            <TextBlock Text="{Binding Quantity}" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Note}" FontSize="11" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </DataTemplate></ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <Grid Grid.Row="4" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+      <ComboBox x:Name="CategoryBox" SelectedIndex="0" SelectionChanged="OnFilterChanged" MinWidth="100">
+        <ComboBoxItem Content="全部" /><ComboBoxItem Content="材料" /><ComboBoxItem Content="消耗品" /><ComboBoxItem Content="待复核" />
+      </ComboBox>
+      <TextBox Grid.Column="1" x:Name="SearchBox" Watermark="搜索物品名称" TextChanged="OnSearchChanged" />
+    </Grid>
+    <Grid Grid.Row="5">
+      <DataGrid x:Name="ItemsGrid" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal"
+                RowHeight="56" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MinHeight="80">
+        <DataGrid.Columns>
+          <DataGridTemplateColumn Header="" Width="54"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+            <Image Source="{Binding Icon}" Width="42" Height="42" Stretch="Uniform" />
+          </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+          <DataGridTextColumn Header="物品" Binding="{Binding Name}" Width="2*" MinWidth="130" />
+          <DataGridTextColumn Header="数量" Binding="{Binding Quantity}" Width="*" MinWidth="90" />
+          <DataGridTextColumn Header="分类" Binding="{Binding Category}" Width="80" />
+          <DataGridTextColumn Header="备注" Binding="{Binding Note}" Width="2*" MinWidth="140" />
+        </DataGrid.Columns>
+      </DataGrid>
+      <TextBlock x:Name="EmptyText" Text="暂无记录，连接设备后点击“开始识别”。" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" Margin="12" />
+    </Grid>
+  </Grid>
+</UserControl>

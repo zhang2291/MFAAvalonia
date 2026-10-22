@@ -3196,8 +3196,8 @@ public class MaaProcessor
     {
         if (AppModeHelper.IsMbccTools && !OperatingSystem.IsAndroid())
         {
-            tasks = tasks.Where(task => task.Entry != "抽卡记录").ToList();
-            oldDrags = oldDrags?.Where(task => task.InterfaceItem?.Entry != "抽卡记录").ToList();
+            tasks = tasks.Where(task => task.Entry is not ("抽卡记录" or "仓库识别")).ToList();
+            oldDrags = oldDrags?.Where(task => task.InterfaceItem?.Entry is not ("抽卡记录" or "仓库识别")).ToList();
         }
         _taskLoader ??= new TaskLoader(Interface, ViewModel!);
         _taskLoader.LoadTasks(tasks, TasksSource, ref FirstTask, oldDrags);
