@@ -52,7 +52,7 @@ public partial class InventoryView : UserControl
             if (_captureProcessor != null && !OwnsCapture)
             {
                 _captureProcessor = null;
-                StatusText.Text = "识别已结束。下方显示最近保存的快照；完整性以记录状态为准，运行详情请查看监控页。";
+                StatusText.Text = "";
             }
             await Refresh(false);
         };
@@ -98,16 +98,20 @@ public partial class InventoryView : UserControl
         _snapshot = snapshot;
         _rows = rows;
         _loadedJson = json;
-        var summaries = snapshot.Currencies.ToList();
+        // Pull equivalence is display-only; keep the stored/exported currency amount intact.
+        var summaries = snapshot.Currencies.Select(item => item.Name == "异方晶"
+            ? new InventorySnapshot.Item {
+                Name = "异方晶 / 抽数",
+                Quantity = long.TryParse(item.Quantity, out var crystals) && crystals >= 0
+                    ? $"{crystals} / {crystals / 180}" : "未识别 / —"
+            } : item).ToList();
         foreach (var name in InventorySnapshot.TicketNames)
             summaries.Add(snapshot.Items.FirstOrDefault(item => item.Name == name)
                 ?? new InventorySnapshot.Item { Name = name, Quantity = "未识别" });
         CurrencyCards.ItemsSource = summaries;
         var timestamp = DateTimeOffset.TryParse(snapshot.CapturedAt, out var time)
             ? time.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") : snapshot.CapturedAt;
-        SnapshotText.Text = $"更新于 {timestamp} · {(snapshot.Complete ? "完整识别" : "部分识别，未识别不代表库存为零")}\n"
-            + string.Join("；", snapshot.CategoryNotes)
-            + $"\n已识别 {rows.Count(row => !row.Item.Unknown)} 种 · 未识别截图 {rows.Count(row => row.Item.Unknown)} 张 · 冲突 {rows.Count(row => row.Item.Conflict)} 项";
+        SnapshotText.Text = $"更新于 {timestamp}";
         ApplyFilter();
         foreach (var row in oldRows) row.Icon?.Dispose();
     });
