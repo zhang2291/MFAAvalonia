@@ -24,6 +24,7 @@ public partial class InventoryView : UserControl
         public string Category => Item.Category;
         public string Quantity => Item.Quantity;
         public string Note => Item.Note;
+        public bool HasNote => !string.IsNullOrEmpty(Item.Note);
         public Bitmap? Icon { get; init; }
     }
 
@@ -122,7 +123,7 @@ public partial class InventoryView : UserControl
     {
         _snapshot = null; _loadedJson = "";
         CurrencyCards.ItemsSource = null;
-        ItemsGrid.ItemsSource = null;
+        ItemsCards.ItemsSource = null;
         foreach (var row in _rows) row.Icon?.Dispose();
         _rows.Clear();
         SnapshotText.Text = "尚未采集仓库资源";
@@ -132,17 +133,13 @@ public partial class InventoryView : UserControl
     private void ApplyFilter()
     {
         if (!_ready) return;
-        var category = (CategoryBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "全部";
         var search = SearchBox.Text?.Trim() ?? "";
-        var rows = _rows.Where(row => (category == "全部" || row.Category == category
-                || category == "待复核" && (row.Item.Unknown || row.Item.Conflict || row.Quantity == "未识别"))
-            && row.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
-        ItemsGrid.ItemsSource = rows;
+        var rows = _rows.Where(row => row.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+        ItemsCards.ItemsSource = rows;
         EmptyText.IsVisible = rows.Count == 0;
         EmptyText.Text = _snapshot == null ? "暂无记录，连接设备后点击“开始识别”。" : "没有符合筛选条件的物品。";
     }
 
-    private void OnFilterChanged(object? sender, SelectionChangedEventArgs args) => ApplyFilter();
     private void OnSearchChanged(object? sender, TextChangedEventArgs args) => ApplyFilter();
     private async void OnRefresh(object? sender, RoutedEventArgs args) => await Refresh();
     private async void OnCollect(object? sender, RoutedEventArgs args)
