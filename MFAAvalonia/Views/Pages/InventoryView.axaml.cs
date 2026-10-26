@@ -22,14 +22,20 @@ public partial class InventoryView : UserControl
         public InventorySnapshot.Item Item { get; init; } = new();
         public string Name => Item.Name;
         public string Category => Item.Category;
-        public string Quantity => Item.Quantity;
-        public string Note => Item.Note;
-        public bool HasNote => !string.IsNullOrEmpty(Item.Note);
+        public InventoryComparison.Entry? Comparison { get; init; }
+        public string Quantity => Comparison?.Current ?? Item.Quantity;
+        public string Before => "历史：" + Comparison?.Before;
+        public string Change => Comparison?.Change ?? "";
+        public bool IsComparison => Comparison != null;
+        public string Note => Comparison?.Reason is { Length: > 0 } reason ? reason : Item.Note;
+        public bool HasNote => !string.IsNullOrEmpty(Note);
         public Bitmap? Icon { get; init; }
     }
 
     private InventorySnapshot? _snapshot;
     private List<Row> _rows = new();
+    private List<Row>? _comparisonRows;
+    private long _comparisonGeneration;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(2) };
     private bool _busy;
     private bool _ready;
@@ -63,6 +69,8 @@ public partial class InventoryView : UserControl
         CollectButton.IsEnabled = !_busy && !Running;
         StopButton.IsEnabled = OwnsCapture;
         ExportButton.IsEnabled = !_busy && _snapshot != null;
+        CompareButton.IsEnabled = !_busy && _snapshot != null;
+        RunComparisonButton.IsEnabled = !_busy && _snapshot != null && HistorySelector.ItemCount > 0;
     }
 
     private async Task Guard(Func<Task> action)
@@ -73,7 +81,14 @@ public partial class InventoryView : UserControl
         try { await action(); }
         catch (Exception exception)
         {
-            StatusText.Text = exception.Message;
+            StatusText.Text = exception switch {
+                Newtonsoft.Json.JsonException => "仓库记录 JSON 格式错误，请检查快照文件或重新采集。",
+                FormatException or InvalidCastException => "仓库记录字段格式错误，请检查快照文件或重新采集。",
+                InvalidDataException => exception.Message,
+                UnauthorizedAccessException => "无法访问仓库记录，请检查文件读取权限。",
+                IOException => "仓库记录读写失败，文件可能已被移除或正在使用，请刷新后重试。",
+                _ => exception.Message
+            };
             LoggerHelper.Error("仓库资源页面：" + exception.Message, exception);
         }
         finally { _busy = false; UpdateButtons(); }
@@ -98,11 +113,14 @@ public partial class InventoryView : UserControl
         _snapshot = snapshot;
         _rows = rows;
         _loadedJson = json;
+        ClearComparisonRows();
+        if (ComparisonPanel.IsVisible)
+            ComparisonText.Text = "当前快照已更新，请选择历史快照并点击“开始对比”。";
         // Pull equivalence is display-only; keep the stored/exported currency amount intact.
         var summaries = snapshot.Currencies.Select(item => item.Name == "异方晶"
             ? new InventorySnapshot.Item {
                 Name = "异方晶 / 抽数",
-                Quantity = long.TryParse(item.Quantity, out var crystals) && crystals >= 0
+                Quantity = item.NumericQuantity is long crystals
                     ? $"{crystals} / {crystals / 180}" : "未识别 / —"
             } : item).ToList();
         foreach (var name in InventorySnapshot.TicketNames)
@@ -126,6 +144,8 @@ public partial class InventoryView : UserControl
     private void ClearSnapshot()
     {
         _snapshot = null; _loadedJson = "";
+        ClearComparisonRows();
+        ComparisonPanel.IsVisible = false;
         CurrencyCards.ItemsSource = null;
         ItemsCards.ItemsSource = null;
         foreach (var row in _rows) row.Icon?.Dispose();
@@ -138,11 +158,78 @@ public partial class InventoryView : UserControl
     {
         if (!_ready) return;
         var search = SearchBox.Text?.Trim() ?? "";
-        var rows = _rows.Where(row => row.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+        var rows = (_comparisonRows ?? _rows)
+            .Where(row => row.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .Where(row => _comparisonRows == null || ChangesOnly.IsChecked != true || row.Comparison?.Changed == true).ToList();
         ItemsCards.ItemsSource = rows;
         EmptyText.IsVisible = rows.Count == 0;
-        EmptyText.Text = _snapshot == null ? "暂无记录，连接设备后点击“开始识别”。" : "没有符合筛选条件的物品。";
+        EmptyText.Text = _snapshot == null ? "暂无记录，连接设备后点击“开始识别”。"
+            : _comparisonRows != null && ChangesOnly.IsChecked == true ? "当前筛选下没有可确认的数量变更；无法比较的项目可取消“只看变更”查看。"
+            : "没有符合筛选条件的物品。";
     }
+
+    private async void OnOpenComparison(object? sender, RoutedEventArgs args) => await Guard(() =>
+    {
+        HistorySelector.ItemsSource = InventoryHistory.List(AppPaths.DataRoot);
+        HistorySelector.SelectedIndex = -1;
+        ComparisonPanel.IsVisible = true;
+        ClearComparisonRows();
+        ComparisonText.Text = HistorySelector.ItemCount == 0 ? "暂无历史快照，请先采集仓库资源。"
+            : "选择历史快照后点击“开始对比”。差值为当前数量减去历史数量。";
+        ApplyFilter();
+        return Task.CompletedTask;
+    });
+
+    private async void OnCompare(object? sender, RoutedEventArgs args) => await Guard(async () =>
+    {
+        var current = _snapshot;
+        var generation = _comparisonGeneration;
+        if (current == null) return;
+        if (HistorySelector.SelectedItem is not string fileName)
+        {
+            ComparisonText.Text = "请先选择一份历史快照。";
+            return;
+        }
+        // Only selected, enumerated filenames are accepted; history is never an arbitrary file picker.
+        if (!InventoryHistory.List(AppPaths.DataRoot).Contains(fileName))
+            throw new InvalidDataException("所选历史快照已不可用，请关闭对比后重新选择。");
+        var json = await File.ReadAllTextAsync(InventoryHistory.Resolve(AppPaths.DataRoot, fileName));
+        var catalogPath = Path.Combine(AppPaths.DataRoot, "resource", "base", "image", "仓库", "catalog.json");
+        var catalog = File.Exists(catalogPath) ? await File.ReadAllTextAsync(catalogPath) : null;
+        // Closing the panel while the file is loading must not restore comparison results afterwards.
+        if (!ComparisonPanel.IsVisible || generation != _comparisonGeneration || !ReferenceEquals(current, _snapshot)) return;
+        var history = InventorySnapshot.Parse(json, AppPaths.DataRoot, catalog);
+        var comparison = InventoryComparison.Compare(history, current);
+        ClearComparisonRows();
+        _comparisonRows = comparison.Entries.Select(entry => new Row {
+            Item = entry.Item, Comparison = entry, Icon = LoadIcon(entry.Item.ImagePath)
+        }).ToList();
+        ComparisonText.Text = $"历史 {DisplayTime(history.CapturedAt)} → 当前 {DisplayTime(current.CapturedAt)}\n"
+            + $"确认变更 {comparison.Entries.Count(entry => entry.Changed)} 项，无法比较 {comparison.Entries.Count(entry => !entry.Difference.HasValue)} 项。"
+            + comparison.Notice;
+        ApplyFilter();
+    });
+
+    private static string DisplayTime(string timestamp) => DateTimeOffset.TryParse(timestamp, out var time)
+        ? time.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") : timestamp;
+
+    private void ClearComparisonRows()
+    {
+        _comparisonGeneration++;
+        if (_comparisonRows != null)
+            foreach (var row in _comparisonRows) row.Icon?.Dispose();
+        _comparisonRows = null;
+    }
+
+    private void OnCloseComparison(object? sender, RoutedEventArgs args)
+    {
+        ClearComparisonRows();
+        ComparisonPanel.IsVisible = false;
+        ChangesOnly.IsChecked = false;
+        ApplyFilter();
+    }
+
+    private void OnChangesOnlyChanged(object? sender, RoutedEventArgs args) => ApplyFilter();
 
     private void OnSearchChanged(object? sender, TextChangedEventArgs args) => ApplyFilter();
     private async void OnRefresh(object? sender, RoutedEventArgs args) => await Refresh();
