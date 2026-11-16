@@ -387,7 +387,6 @@ public partial class App : Application
             .AddView<MonitorView, MonitorViewModel>(services)
             .AddView<SettingsView, SettingsViewModel>(services)
             .AddView<ScreenshotView, ScreenshotViewModel>(services)
-            .AddView<PipelineEditorView, PipelineEditorViewModel>(services)
             .AddView<TaskManagerView, TaskManagerViewModel>(services)
             .AddView<GachaRecordsView, GachaRecordsViewModel>(services)
             .AddView<InventoryView, InventoryViewModel>(services)

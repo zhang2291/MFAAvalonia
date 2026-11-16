@@ -239,11 +239,11 @@ public partial class InventoryView : UserControl
         await Guard(() =>
         {
             var processor = MaaProcessorManager.Instance.Current;
-            if (processor.ViewModel?.CurrentResource is not ("官服" or "B服"))
-                throw new InvalidOperationException("请先在首页选择官服或 B服中文资源及设备。");
+            if (processor.ViewModel?.CurrentResource != "官服")
+                throw new InvalidOperationException("请先在首页选择官服中文资源及设备。");
             var task = new MaaInterface.MaaInterfaceTask {
                 Name = "仓库识别", Entry = "仓库识别", Check = true,
-                Resource = new List<string> { "官服", "B服" }
+                Resource = new List<string> { "官服" }
             };
             if (Running || !processor.TryStartTasks(new List<DragItemViewModel> { new(task) }, ignoreCheckedState: true))
                 throw new InvalidOperationException("已有任务正在运行，请结束后再识别仓库。");

@@ -4,7 +4,7 @@
 
 - 原仓库：`MaaXYZ/MFAAvalonia`
 - 当前 Fork：`zhang2291/MFAAvalonia`
-- 用途：作为 MBCCtools 的 Windows 桌面 GUI，并集成个人使用的 MaaPipelineEditor 与相关本地修改。
+- 用途：作为 MBCCtools 的 Windows 桌面 GUI，提供日常任务、仓库资源、抽卡记录和任务管理。Pipeline 编辑统一使用 VSCode 插件。
 - 本仓库仅用于个人设备、本地构建与测试，不代表上游官方版本。
 - LICENSE 与原作者/贡献者版权信息按上游保留。
 

@@ -168,9 +168,9 @@ public partial class GachaRecordsView : UserControl
                 pipeline[node] = new JObject { ["recognition"] = new JObject { ["param"] = new JObject { ["custom_recognition_param"] = parameters } } };
             }
             var task = new MaaInterface.MaaInterfaceTask { Name = "抽卡记录", Entry = "抽卡记录", Check = true,
-                Resource = new List<string> { "官服", "B服" }, PipelineOverride = pipeline.ToObject<Dictionary<string, JToken>>() };
+                Resource = new List<string> { "官服" }, PipelineOverride = pipeline.ToObject<Dictionary<string, JToken>>() };
             var processor = MaaProcessorManager.Instance.Current;
-            if (processor.ViewModel?.CurrentResource is not ("官服" or "B服")) throw new InvalidOperationException("当前采集仅支持官服或 B服中文界面，请先在首页选择资源和设备。");
+            if (processor.ViewModel?.CurrentResource != "官服") throw new InvalidOperationException("当前采集仅支持官服中文界面，请先在首页选择资源和设备。");
             if (Running || !processor.TryStartTasks(new List<DragItemViewModel> { new(task) }, ignoreCheckedState: true))
                 throw new InvalidOperationException("已有任务开始运行，请等待结束后再采集。");
             _captureProcessor = processor;

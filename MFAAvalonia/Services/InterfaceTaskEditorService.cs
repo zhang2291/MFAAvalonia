@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -57,6 +57,34 @@ internal sealed class InterfaceEditorDocument
 
 internal static class InterfaceTaskEditorService
 {
+    internal static string ResolveProjectRoot()
+    {
+        var configured = Environment.GetEnvironmentVariable("MFA_PROJECT_ROOT");
+        if (IsProjectRoot(configured))
+            return Path.GetFullPath(configured!);
+
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var depth = 0; directory != null && depth < 10; depth++, directory = directory.Parent)
+        {
+            var sibling = Path.Combine(directory.FullName, "MBCCtools");
+            if (IsProjectRoot(sibling))
+                return Path.GetFullPath(sibling);
+            if (IsProjectRoot(directory.FullName))
+                return directory.FullName;
+        }
+
+        throw new DirectoryNotFoundException(
+            "未找到 MBCCtools 项目根目录。可通过环境变量 MFA_PROJECT_ROOT 显式指定。");
+    }
+
+    private static bool IsProjectRoot(string? path)
+    {
+        return !string.IsNullOrWhiteSpace(path)
+               && Directory.Exists(path)
+               && File.Exists(Path.Combine(path, "interface.json"))
+               && Directory.Exists(Path.Combine(path, "resource"));
+    }
+
     internal static InterfaceEditorDocument Load(string projectRoot)
     {
         var interfacePath = Path.Combine(projectRoot, "interface.json");
@@ -113,11 +141,7 @@ internal static class InterfaceTaskEditorService
             foreach (var resource in ReadStringList(item["resource"]))
                 task.Resources.Add(resource);
             if (task.Resources.Count == 0)
-            {
                 task.Resources.Add("官服");
-                task.Resources.Add("B服");
-                task.Resources.Add("国际服");
-            }
             foreach (var optionName in ReadStringList(item["option"]))
             {
                 if (!document.OptionsByName.TryGetValue(optionName, out var option))
@@ -247,7 +271,7 @@ internal static class InterfaceTaskEditorService
                 throw new InvalidDataException($"设置“{option.Name}”的默认选项“{option.DefaultCase}”不存在于 cases 中。" );
 
             var raw = option.Raw;
-            // 任务管理当前编辑的是单选 cases；显式写入 type，避免 MPE Project Interface Schema
+            // 任务管理当前编辑的是单选 cases；显式写入 type，避免 Project Interface Schema
             // 将只有两个 cases 的旧配置同时判定为 select 和 switch。
             raw["type"] = "select";
             SetOptionalString(raw, "description", option.Description);

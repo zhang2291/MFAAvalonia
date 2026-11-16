@@ -51,8 +51,6 @@
                             <TextBlock Grid.Row="3" VerticalAlignment="Top" Margin="0,6,0,0" Text="适用资源" />
                             <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="12">
                                 <CheckBox x:Name="TaskOfficialCheck" Click="OnTaskFieldChanged" Content="官服" />
-                                <CheckBox x:Name="TaskBilibiliCheck" Click="OnTaskFieldChanged" Content="B服" />
-                                <CheckBox x:Name="TaskGlobalCheck" Click="OnTaskFieldChanged" Content="国际服" />
                             </StackPanel>                            <TextBlock Grid.Row="4" VerticalAlignment="Top" Margin="0,6,0,0" Text="任务说明" />
                             <TextBox Grid.Row="4" Grid.Column="1" x:Name="TaskDescriptionBox" MinHeight="70"
                                      AcceptsReturn="True" TextWrapping="Wrap" LostFocus="OnTaskFieldLostFocus" />

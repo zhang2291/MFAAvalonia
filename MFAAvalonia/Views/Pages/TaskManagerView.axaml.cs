@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.Interactivity;
 using MFAAvalonia.Extensions.MaaFW;
 using MFAAvalonia.Helper;
@@ -57,7 +57,7 @@ public partial class TaskManagerView : UserControl
     {
         try
         {
-            var projectRoot = MpeIntegrationService.ResolveProjectRoot();
+            var projectRoot = InterfaceTaskEditorService.ResolveProjectRoot();
             _document = InterfaceTaskEditorService.Load(projectRoot);
             ProjectPathText.Text = projectRoot;
             TaskList.ItemsSource = _document.Tasks;
@@ -88,8 +88,6 @@ public partial class TaskManagerView : UserControl
             TaskDescriptionBox.Text = task.Description;
             TaskDefaultCheck.IsChecked = task.DefaultCheck;
             TaskOfficialCheck.IsChecked = task.Resources.Contains("官服");
-            TaskBilibiliCheck.IsChecked = task.Resources.Contains("B服");
-            TaskGlobalCheck.IsChecked = task.Resources.Contains("国际服");
             OptionList.ItemsSource = task.Options;
             OptionList.SelectedIndex = task.Options.Count > 0 ? 0 : -1;
         }
@@ -150,8 +148,6 @@ public partial class TaskManagerView : UserControl
         task.DefaultCheck = TaskDefaultCheck.IsChecked == true;
         task.Resources.Clear();
         if (TaskOfficialCheck.IsChecked == true) task.Resources.Add("官服");
-        if (TaskBilibiliCheck.IsChecked == true) task.Resources.Add("B服");
-        if (TaskGlobalCheck.IsChecked == true) task.Resources.Add("国际服");
         RefreshTaskList();
         RefreshPipelineChoices();
     }
