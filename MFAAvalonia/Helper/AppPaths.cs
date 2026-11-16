@@ -44,7 +44,7 @@ public static class AppPaths
         if (_initialized)
             return;
 
-        DataRoot = InstallRoot;
+        DataRoot = ResolveDataRoot();
         _configDirectory = ResolveConfigDirectory();
         _logsDirectory = ResolveLogsDirectory();
         _tempDirectory = ResolveTempDirectory();
@@ -60,6 +60,35 @@ public static class AppPaths
         LogInitializationStatus();
 
         _initialized = true;
+    }
+
+    private static string ResolveDataRoot()
+    {
+        var configured = Environment.GetEnvironmentVariable("MFA_PROJECT_ROOT")
+                         ?? Environment.GetEnvironmentVariable("MFA_DATA_ROOT");
+        if (IsProjectRoot(configured))
+            return Path.GetFullPath(configured!);
+
+        if (IsProjectRoot(InstallRoot))
+            return InstallRoot;
+
+        var directory = new DirectoryInfo(InstallRoot);
+        for (var depth = 0; directory != null && depth < 10; depth++, directory = directory.Parent)
+        {
+            var sibling = Path.Combine(directory.FullName, "MBCCtools");
+            if (IsProjectRoot(sibling))
+                return Path.GetFullPath(sibling);
+        }
+
+        return InstallRoot;
+    }
+
+    private static bool IsProjectRoot(string? path)
+    {
+        return !string.IsNullOrWhiteSpace(path)
+               && Directory.Exists(path)
+               && File.Exists(Path.Combine(path, "interface.json"))
+               && Directory.Exists(Path.Combine(path, "resource"));
     }
 
     private static string ResolveConfigDirectory()

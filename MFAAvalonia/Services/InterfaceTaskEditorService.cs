@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MFAAvalonia.Helper;
 
 namespace MFAAvalonia.Services;
 
@@ -59,30 +60,8 @@ internal static class InterfaceTaskEditorService
 {
     internal static string ResolveProjectRoot()
     {
-        var configured = Environment.GetEnvironmentVariable("MFA_PROJECT_ROOT");
-        if (IsProjectRoot(configured))
-            return Path.GetFullPath(configured!);
-
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        for (var depth = 0; directory != null && depth < 10; depth++, directory = directory.Parent)
-        {
-            var sibling = Path.Combine(directory.FullName, "MBCCtools");
-            if (IsProjectRoot(sibling))
-                return Path.GetFullPath(sibling);
-            if (IsProjectRoot(directory.FullName))
-                return directory.FullName;
-        }
-
-        throw new DirectoryNotFoundException(
-            "未找到 MBCCtools 项目根目录。可通过环境变量 MFA_PROJECT_ROOT 显式指定。");
-    }
-
-    private static bool IsProjectRoot(string? path)
-    {
-        return !string.IsNullOrWhiteSpace(path)
-               && Directory.Exists(path)
-               && File.Exists(Path.Combine(path, "interface.json"))
-               && Directory.Exists(Path.Combine(path, "resource"));
+        AppPaths.Initialize();
+        return AppPaths.DataRoot;
     }
 
     internal static InterfaceEditorDocument Load(string projectRoot)
