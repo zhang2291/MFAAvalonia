@@ -190,7 +190,7 @@ public partial class GachaRecordsView : UserControl
             if (!File.Exists(path)) return null;
             var obj = JObject.Parse(File.ReadAllText(path, Encoding.UTF8));
             var updated = obj.Value<double?>("updated") ?? 0;
-            if (updated < _captureStartedAt.ToUnixTimeSeconds() - 2) return null;
+            if (updated * 1000.0 < _captureStartedAt.ToUnixTimeMilliseconds()) return null;
             return obj;
         }
         catch { return null; }
