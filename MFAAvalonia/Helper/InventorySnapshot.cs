@@ -184,7 +184,17 @@ public sealed class InventoryComparison
 /// <summary>History is selected only from the fixed inventory/history directory, never an arbitrary path.</summary>
 public static class InventoryHistory
 {
-    private static string HistoryRoot(string dataRoot) => Path.GetFullPath(Path.Combine(dataRoot, "data", "inventory", "history"));
+    public sealed class Entry
+    {
+        public string FileName { get; init; } = "";
+        public string Label { get; init; } = "";
+        public string DisplayText => string.IsNullOrWhiteSpace(Label) ? FileName : $"{Label} · {FileName}";
+        public override string ToString() => DisplayText;
+    }
+
+    private static string InventoryRoot(string dataRoot) => Path.GetFullPath(Path.Combine(dataRoot, "data", "inventory"));
+    private static string HistoryRoot(string dataRoot) => Path.GetFullPath(Path.Combine(InventoryRoot(dataRoot), "history"));
+    private static string MetaPath(string dataRoot) => Path.GetFullPath(Path.Combine(InventoryRoot(dataRoot), "history-meta.json"));
 
     public static List<string> List(string dataRoot)
     {
@@ -194,6 +204,87 @@ public static class InventoryHistory
         return Directory.EnumerateFiles(root, "*.json", SearchOption.TopDirectoryOnly)
             .Where(path => (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0)
             .Select(Path.GetFileName).OfType<string>().OrderByDescending(name => name, StringComparer.Ordinal).ToList();
+    }
+
+    public static List<Entry> ListEntries(string dataRoot)
+    {
+        var labels = LoadLabels(dataRoot);
+        return List(dataRoot).Select(fileName => new Entry
+        {
+            FileName = fileName,
+            Label = labels.GetValueOrDefault(fileName, ""),
+        }).ToList();
+    }
+
+    public static Dictionary<string, string> LoadLabels(string dataRoot)
+    {
+        var meta = MetaPath(dataRoot);
+        if (!File.Exists(meta)) return new();
+        try
+        {
+            EnsureRegular(meta);
+            var obj = JObject.Parse(File.ReadAllText(meta, Encoding.UTF8));
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var prop in obj.Properties())
+            {
+                if (prop.Value.Type != JTokenType.String) continue;
+                var text = prop.Value.Value<string>()?.Trim() ?? "";
+                if (!string.IsNullOrEmpty(text) && text.Length <= 40 && text.All(ch => ch >= 32))
+                    result[prop.Name] = text;
+            }
+            return result;
+        }
+        catch
+        {
+            return new();
+        }
+    }
+
+    public static string Rename(string dataRoot, string fileName, string? label)
+    {
+        Resolve(dataRoot, fileName);
+        var normalized = (label ?? "").Trim();
+        if (normalized.Length > 40 || normalized.Any(ch => ch < 32))
+            throw new InvalidDataException("快照名称须在 40 个可见字符以内。");
+        var labels = LoadLabels(dataRoot);
+        if (string.IsNullOrEmpty(normalized))
+            labels.Remove(fileName);
+        else
+            labels[fileName] = normalized;
+        SaveLabels(dataRoot, labels);
+        return normalized;
+    }
+
+    public static void Delete(string dataRoot, string fileName)
+    {
+        var path = Resolve(dataRoot, fileName);
+        File.Delete(path);
+        var labels = LoadLabels(dataRoot);
+        if (labels.Remove(fileName))
+        {
+            try { SaveLabels(dataRoot, labels); }
+            catch { }
+        }
+    }
+
+    private static void SaveLabels(string dataRoot, Dictionary<string, string> labels)
+    {
+        var invRoot = InventoryRoot(dataRoot);
+        Directory.CreateDirectory(invRoot);
+        EnsureRegular(invRoot);
+        var meta = MetaPath(dataRoot);
+        if (File.Exists(meta)) EnsureRegular(meta);
+        var json = JsonConvert.SerializeObject(new SortedDictionary<string, string>(labels, StringComparer.Ordinal), Formatting.None);
+        var temp = Path.Combine(invRoot, $".history-meta-{Guid.NewGuid():N}.tmp");
+        try
+        {
+            File.WriteAllText(temp, json, new UTF8Encoding(false));
+            File.Move(temp, meta, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temp)) File.Delete(temp);
+        }
     }
 
     public static string Resolve(string dataRoot, string fileName)
