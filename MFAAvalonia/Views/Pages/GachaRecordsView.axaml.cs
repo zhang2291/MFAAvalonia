@@ -167,9 +167,19 @@ public partial class GachaRecordsView : UserControl
     {
         var prog = ReadProgressJson();
         if (prog == null) return null;
+        var state = prog.Value<string>("state") ?? "";
+        var status = prog.Value<string>("status") ?? "";
+        var reason = prog.Value<string>("reason") ?? "";
         var added = prog.Value<int?>("new") ?? 0;
         var pages = prog.Value<int?>("pages") ?? 0;
-        return $"采集已完成：本次新增 +{added} 条（共扫描 {pages} 页）。";
+        var reasonSuffix = string.IsNullOrWhiteSpace(reason) ? "" : $"（{reason}）";
+        if (state == "done" && status == "completed")
+            return $"采集已完成：本次新增 +{added} 条（共扫描 {pages} 页）。";
+        if (status == "partial")
+            return $"采集未完整结束{reasonSuffix}：已保留新增 +{added} 条（共扫描 {pages} 页）。";
+        if (state == "running" || state == "finishing")
+            return $"采集已提前停止：已保留新增 +{added} 条（共扫描 {pages} 页）。";
+        return $"采集已结束{reasonSuffix}：本次新增 +{added} 条（共扫描 {pages} 页）。";
     }
 
     private JObject? ReadProgressJson()
